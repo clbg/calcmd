@@ -1,0 +1,56 @@
+name: Deploy Website to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'poc/packages/website/**'
+      - 'poc/packages/core/**'
+      - 'poc/package.json'
+      - 'poc/pnpm-workspace.yaml'
+      - '.github/workflows/deploy-website.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: poc/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+        working-directory: poc
+
+      - name: Build website
+        run: pnpm build:website
+        working-directory: poc
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: poc/packages/website/dist
+
+      - uses: actions/deploy-pages@v4
+        id: deployment
