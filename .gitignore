@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# pnpm
+pnpm-approved-builds.json
+
+# Build outputs
+dist/
+build/
+
+# Vite
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/

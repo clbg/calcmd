@@ -1,0 +1,110 @@
+.preview-container {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: white;
+}
+
+.preview-header {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header-name {
+  font-size: 14px;
+  color: #212529;
+}
+
+.header-formula {
+  font-size: 12px;
+  color: #6c757d;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-weight: normal;
+}
+
+.preview-cell {
+  border: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preview-cell:hover {
+  background: #f8f9fa;
+}
+
+.cell-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.cell-value {
+  flex: 1;
+}
+
+.cell-formula-indicator {
+  color: #667eea;
+  font-weight: bold;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.cell-error {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.has-formula {
+  background: #f0f4ff;
+}
+
+.has-formula:hover {
+  background: #e6edff;
+}
+
+.has-error {
+  background: #fff5f5;
+  border-color: #dc3545 !important;
+}
+
+.has-error:hover {
+  background: #ffe6e6;
+}
+
+.selected {
+  background: #fff3cd !important;
+  border: 2px solid #ffc107 !important;
+  font-weight: 600;
+}
+
+.label-row .preview-cell:first-child {
+  background: #e7f5ff;
+  font-weight: 600;
+  color: #0056b3;
+}
+
+.label-row .preview-cell:first-child::before {
+  content: '@';
+  color: #667eea;
+  margin-right: 0.25rem;
+}

@@ -1,0 +1,134 @@
+.App {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.App-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.App-header p {
+  margin: 0 0 1rem 0;
+  opacity: 0.9;
+}
+
+.examples {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.examples button {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.examples button:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+}
+
+.App-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.panel {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel h2 {
+  margin: 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.editor-panel {
+  overflow: hidden;
+}
+
+.preview-panel {
+  overflow: auto;
+}
+
+.error-banner {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  padding: 1rem;
+  margin: 1rem;
+  border-radius: 4px;
+}
+
+.errors {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+.errors h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.errors ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.errors li {
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.error-parse {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.error-validation {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.error-runtime {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+@media (max-width: 1024px) {
+  .App-content {
+    grid-template-columns: 1fr;
+  }
+}

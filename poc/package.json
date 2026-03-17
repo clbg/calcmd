@@ -1,0 +1,9 @@
+{
+  "name": "@calcmd/root",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter @calcmd/core build",
+    "dev": "pnpm --filter @calcmd/core build && pnpm --filter @calcmd/playground dev",
+    "test": "pnpm --filter @calcmd/core test"
+  }
+}

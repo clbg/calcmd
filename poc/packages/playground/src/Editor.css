@@ -1,0 +1,22 @@
+.editor-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.editor-textarea {
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  border: none;
+  outline: none;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  tab-size: 2;
+}
+
+.editor-textarea:focus {
+  background: #fafafa;
+}
