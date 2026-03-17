@@ -11,20 +11,33 @@ poc/
 └── packages/
     ├── core/              # @calcmd/core — TypeScript core library
     │   ├── src/
-    │   │   ├── types.ts          # Type definitions
-    │   │   ├── parser.ts         # Markdown → AST parser
-    │   │   ├── formula-parser.ts # Formula string → Expression AST
-    │   │   ├── evaluator.ts      # Formula evaluator
-    │   │   └── index.ts          # Main API
+    │   │   ├── types.ts
+    │   │   ├── parser.ts
+    │   │   ├── formula-parser.ts
+    │   │   ├── evaluator.ts
+    │   │   └── index.ts
     │   └── tests/
-    └── playground/        # @calcmd/playground — React UI (Vite)
-        ├── index.html            # Vite entry point
+    ├── playground/        # @calcmd/playground — dev sandbox (Vite + React)
+    │   ├── index.html
+    │   ├── vite.config.ts
+    │   └── src/
+    │       ├── App.tsx
+    │       ├── Editor.tsx
+    │       ├── Preview.tsx
+    │       └── examples.ts
+    └── website/           # @calcmd/website — public landing page (Vite + React)
+        ├── index.html
         ├── vite.config.ts
         └── src/
-            ├── App.tsx           # Main app component
-            ├── Editor.tsx        # Left: markdown editor
-            ├── Preview.tsx       # Right: rendered table
-            └── examples.ts       # Example tables
+            ├── App.tsx
+            ├── main.tsx
+            ├── styles.css
+            └── components/
+                ├── Nav.tsx
+                ├── Hero.tsx
+                ├── LiveDemo.tsx   # Uses @calcmd/core for live evaluation
+                ├── Features.tsx
+                └── Syntax.tsx
 ```
 
 ## Quick Start
@@ -38,30 +51,18 @@ From the `poc/` directory:
 
 ```bash
 pnpm install
-pnpm --filter @calcmd/core build
-pnpm --filter @calcmd/playground dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-## Dev Workflow
-
-Terminal 1 — watch core for changes:
-```bash
-pnpm --filter @calcmd/core dev
-```
-
-Terminal 2 — run playground:
-```bash
-pnpm --filter @calcmd/playground dev
+pnpm dev             # playground at http://localhost:5173
+pnpm dev:website     # landing page at http://localhost:5174
 ```
 
 ## Root Scripts
 
 ```bash
-pnpm build   # build @calcmd/core
-pnpm dev     # build core then start playground
-pnpm test    # run core tests
+pnpm build           # build @calcmd/core (CJS + ESM outputs)
+pnpm dev             # build core → start playground (localhost:5173)
+pnpm dev:website     # build core → start website (localhost:5174)
+pnpm build:website   # build core + website → packages/website/dist/
+pnpm test            # run core tests
 ```
 
 ## Features
@@ -100,7 +101,13 @@ result.rows[0].cells[3].computed; // 4.5
 result.errors;                    // []
 ```
 
-## Testing
+## Core Library — Dual Output
+
+`@calcmd/core` builds two formats:
+- `dist/index.js` — CommonJS (for Node.js, Jest)
+- `dist/esm/index.js` — ESM (for Vite, bundlers)
+
+The `exports` field in `package.json` routes automatically based on the consumer.
 
 ```bash
 pnpm test

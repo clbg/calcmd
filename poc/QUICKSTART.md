@@ -1,143 +1,170 @@
 # CalcMD POC - Quick Start Guide
 
-## What We Built
-
-### Core Library (`@calcmd/core`)
-- Markdown table parser
-- Formula parser (arithmetic, functions, label references)
-- Evaluator with 10+ functions
-- Error handling and validation
-
-### React Playground
-- Real-time split-pane editor
-- Live preview with formula highlighting
-- Cell selection and hover tooltips
-- 5 built-in examples
-- Error display
-
-## How to Run
-
-### Prerequisites
+## Prerequisites
 
 Install pnpm if you haven't:
 ```bash
 npm install -g pnpm
 ```
 
-### Quick Start
-
-From the `poc/` directory — one command installs everything:
-
+Then from the `poc/` directory, install all packages at once:
 ```bash
 pnpm install
+```
+
+---
+
+## Packages
+
+| Package | Description | Port |
+|---------|-------------|------|
+| `@calcmd/core` | Parser + evaluator library | — |
+| `@calcmd/playground` | Dev sandbox with split-pane editor | 5173 |
+| `@calcmd/website` | Public landing page with live demo | 5174 |
+
+---
+
+## Running the Playground
+
+The playground is a full-featured dev sandbox for testing CalcMD syntax.
+
+```bash
+# Build core first (required)
 pnpm --filter @calcmd/core build
+
+# Start playground
 pnpm --filter @calcmd/playground dev
 ```
 
-Browser opens at http://localhost:5173
+Or use the root shortcut:
+```bash
+pnpm dev
+```
 
-### Development Mode (watch core + run playground)
+Opens at http://localhost:5173
 
-Terminal 1 — watch core for changes:
+### Watch mode (core + playground together)
+
+Terminal 1:
 ```bash
 pnpm --filter @calcmd/core dev
 ```
 
-Terminal 2 — run playground:
+Terminal 2:
 ```bash
 pnpm --filter @calcmd/playground dev
 ```
 
-### Run tests
+---
+
+## Running the Website Locally
+
+The website is the public landing page with a live CalcMD demo powered by `@calcmd/core`.
+
+```bash
+pnpm dev:website
+```
+
+Opens at http://localhost:5174
+
+---
+
+## Deploying the Website to GitHub Pages
+
+### Manual deployment
+
+```bash
+# 1. Build everything
+pnpm build:website
+
+# 2. The output is in poc/packages/website/dist/
+# 3. Commit and push
+git add poc/packages/website/dist
+git commit -m "chore: update website build"
+git push
+```
+
+Then in GitHub repo settings → Pages → set source to the `dist/` folder.
+
+### Recommended: GitHub Actions (automatic)
+
+Create `.github/workflows/deploy-website.yml`:
+
+```yaml
+name: Deploy Website
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'poc/packages/website/**'
+      - 'poc/packages/core/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: poc/pnpm-lock.yaml
+      - run: pnpm install
+        working-directory: poc
+      - run: pnpm build:website
+        working-directory: poc
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: poc/packages/website/dist
+      - uses: actions/deploy-pages@v4
+        id: deployment
+```
+
+In GitHub repo settings → Pages → set source to **GitHub Actions**.
+
+The site will auto-deploy on every push to `master` that touches `core/` or `website/`.
+
+---
+
+## Running Tests
 
 ```bash
 pnpm test
 ```
 
-## Try It Out
+---
 
-Once the playground opens:
+## All Root Scripts
 
-1. Edit the table in the left pane
-2. See results in the right pane instantly
-3. Click examples at the top to load presets
-4. Hover cells to see formulas
-5. Click cells to select and highlight
+```bash
+pnpm build          # build @calcmd/core (CJS + ESM)
+pnpm dev            # build core → start playground (localhost:5173)
+pnpm dev:website    # build core → start website (localhost:5174)
+pnpm build:website  # build core + website → dist/
+pnpm test           # run core tests
+```
 
-### Example to Try
+---
 
-Paste this into the editor:
+## Example CalcMD Syntax
 
 ```markdown
 | Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
 | Apple | 3 | 1.5 | 4.5 |
 | Banana | 5 | 0.8 | 4.0 |
-| **Total** | | | **=sum(Total)** |
+| **Total** | | | **8.5=sum(Total)** |
 ```
 
-## Supported Features
-
-### Column Formulas
-```markdown
-| Item | Qty | Price | Total=Qty*Price |
-```
-Every cell in `Total` column auto-calculates.
-
-### Aggregations
-```markdown
-| **Sum** | | | **=sum(Total)** |
-```
-`sum()`, `avg()`, `min()`, `max()`, `count()`
-
-### Label References
-```markdown
-| @subtotal | **300** |
-| Tax | =@subtotal*0.1 |
-```
-
-### Conditional Logic
-```markdown
-| Grade=if(Score>=90,"A","B") |
-```
-
-### Math Functions
-```markdown
-| Rounded=round(Price*1.15, 2) |
-```
-
-## Known Limitations
-
-- Aggregations exclude current row (avoid self-reference)
-- No circular dependency detection yet
-- Formula cells must start with `=`
-- Label references (`@label`) must be defined before use
-
-## Architecture
-
-```
-User types markdown
-    ↓
-Parser (markdown → Table AST)
-    ↓
-FormulaParser (formula string → Expression AST)
-    ↓
-Evaluator (compute values)
-    ↓
-React Preview (render with highlighting)
-```
-
-## API Example
-
-```typescript
-import { calcmd } from '@calcmd/core';
-
-const result = calcmd(`
-| Item | Amount |
-|------|--------|
-| A | 100 |
-| @total | =sum(Amount) |
-`);
-
-console.log(result.rows[1].cells[1].computed); // 100
-```
+Supported: `sum()`, `avg()`, `min()`, `max()`, `count()`, `round()`, `abs()`, `floor()`, `ceil()`, `if()`

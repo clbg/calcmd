@@ -11,7 +11,16 @@
 
 - React 18 with TypeScript 5
 - Vite 5 + @vitejs/plugin-react
+- Dev sandbox for testing core features
 - Depends on `@calcmd/core` via workspace reference (`workspace:*`)
+
+## Website (`@calcmd/website`)
+
+- React 18 with TypeScript 5
+- Vite 5 + @vitejs/plugin-react
+- Public landing page, deployed to GitHub Pages
+- Imports `@calcmd/core` for live demo evaluation in the browser
+- `vite.config.ts` sets `base: '/calcmd/'` for GitHub Pages subpath
 
 ## Package Management
 
@@ -41,16 +50,25 @@ pnpm --filter @calcmd/core test    # jest
 
 ```bash
 pnpm --filter @calcmd/playground dev      # dev server at http://localhost:5173
-pnpm --filter @calcmd/playground build    # production build
-pnpm --filter @calcmd/playground preview  # preview production build
+pnpm --filter @calcmd/playground build
+```
+
+### Website (landing page)
+
+```bash
+pnpm --filter @calcmd/website dev         # dev server at http://localhost:5174
+pnpm --filter @calcmd/website build       # outputs to packages/website/dist/
+pnpm --filter @calcmd/website preview
 ```
 
 ### Root-level shortcuts
 
 ```bash
-pnpm build   # build core
-pnpm dev     # build core then start playground
-pnpm test    # run core tests
+pnpm build          # build core
+pnpm dev            # build core then start playground
+pnpm dev:website    # build core then start website
+pnpm build:website  # build core then build website for deployment
+pnpm test           # run core tests
 ```
 
 ### Typical dev workflow
