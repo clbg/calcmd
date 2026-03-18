@@ -20,6 +20,7 @@ Formulas appear in two places:
 - Git-friendly: plain text, diffs cleanly
 - Graceful degradation: renders as normal markdown without tools
 - Secure: whitelist-only functions, sandboxed evaluation, no scripting
+- Non-intrusive: CalcMD adapts to the user's table, not the other way around
 
 ## Supported Formula Features
 
@@ -29,8 +30,9 @@ Formulas appear in two places:
 - Aggregations: `sum()`, `avg()`, `min()`, `max()`, `count()`
 - Math: `round()`, `abs()`, `floor()`, `ceil()`
 - Conditional: `if(condition, true_val, false_val)`
-- Row labels: `@label` for cross-row references
+- Row labels: `@label: value` for cross-row references
+- Column aliases: `#alias` for ergonomic formula references
 
 ## Current State
 
-This repo contains the CalcMD specification documents and a proof-of-concept (POC) implementation. The POC is not a production product — it demonstrates the concept and validates the spec.
+This repo contains the CalcMD specification (docs/04-Spec.md) and a working implementation across three packages: core (parser/evaluator), ui (React components), and website (landing page + playground).

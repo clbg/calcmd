@@ -1,90 +1,59 @@
-# CalcMD POC
+# CalcMD
 
-Proof of concept for CalcMD — calculated markdown tables.
+Calculated Markdown Tables — an open specification that extends markdown table syntax with embedded formulas.
 
 ## Project Structure
 
 ```
-poc/
-├── package.json           # Workspace root
-├── pnpm-workspace.yaml    # pnpm workspace config
-└── packages/
-    ├── core/              # @calcmd/core — TypeScript core library
-    │   ├── src/
-    │   │   ├── types.ts
-    │   │   ├── parser.ts
-    │   │   ├── formula-parser.ts
-    │   │   ├── evaluator.ts
-    │   │   └── index.ts
-    │   └── tests/
-    ├── playground/        # @calcmd/playground — dev sandbox (Vite + React)
-    │   ├── index.html
-    │   ├── vite.config.ts
-    │   └── src/
-    │       ├── App.tsx
-    │       ├── Editor.tsx
-    │       ├── Preview.tsx
-    │       └── examples.ts
-    └── website/           # @calcmd/website — public landing page (Vite + React)
-        ├── index.html
-        ├── vite.config.ts
-        └── src/
-            ├── App.tsx
-            ├── main.tsx
-            ├── styles.css
-            └── components/
-                ├── Nav.tsx
-                ├── Hero.tsx
-                ├── LiveDemo.tsx   # Uses @calcmd/core for live evaluation
-                ├── Features.tsx
-                └── Syntax.tsx
+docs/              # Spec and planning documents
+packages/
+├── core/          # @calcmd/core — parser, evaluator, types
+├── ui/            # @calcmd/ui — reusable React components (Editor, Preview)
+└── website/       # @calcmd/website — landing page + playground (Vite + React)
 ```
 
 ## Quick Start
 
-Requires [pnpm](https://pnpm.io). Install it with:
+Requires [pnpm](https://pnpm.io):
 ```bash
 npm install -g pnpm
 ```
 
-From the `poc/` directory:
-
+From the repo root:
 ```bash
 pnpm install
-pnpm dev             # playground at http://localhost:5173
-pnpm dev:website     # landing page at http://localhost:5174
+pnpm dev           # core watch + website dev server at http://localhost:5173
 ```
 
-## Root Scripts
+## Scripts
 
 ```bash
-pnpm build           # build @calcmd/core (CJS + ESM outputs)
-pnpm dev             # build core → start playground (localhost:5173)
-pnpm dev:website     # build core → start website (localhost:5174)
-pnpm build:website   # build core + website → packages/website/dist/
+pnpm build           # build all packages (via Turborepo)
+pnpm dev             # core watch + website dev (includes /playground)
 pnpm test            # run core tests
+pnpm lint            # ESLint across all packages
+pnpm format          # Prettier format
+pnpm build:website   # build website for deployment
 ```
 
 ## Features
 
 ### Core Library (`@calcmd/core`)
 
-- Markdown table parsing
-- Column-level formulas: `Total=Qty*Price`
-- Cell-level formulas: `=sum(Amount)`
-- Row labels: `@label` for cross-row references
-- Arithmetic: `+`, `-`, `*`, `/`, `%`
-- Comparison: `==`, `!=`, `>`, `<`, `>=`, `<=`
-- Logical: `and`, `or`, `not`
-- Functions: `sum()`, `avg()`, `count()`, `min()`, `max()`, `round()`, `abs()`, `if()`
+- Column formulas: `Total=Qty*Price` (default template, cell can override)
+- Cell formulas: `=sum(Amount)`
+- Row labels: `@label: value` for cross-row references
+- Column aliases: `#alias` for ergonomic formula references
+- Cell-granularity dependency graph with topological sort
+- Circular reference detection
+- Functions: `sum()`, `avg()`, `count()`, `min()`, `max()`, `round()`, `abs()`, `floor()`, `ceil()`, `if()`
+- Strict type checking (no implicit coercion)
 
-### Playground
+### Website + Playground
 
-- Real-time editing and preview
-- Formula highlighting (blue background)
-- Error highlighting (red border)
-- Hover to see formula details
-- 5 built-in examples
+- Landing page at `/`
+- Interactive playground at `/playground` with 5 built-in examples
+- Real-time formula evaluation powered by `@calcmd/core`
 
 ## API
 
@@ -94,26 +63,21 @@ import { calcmd } from '@calcmd/core';
 const result = calcmd(`
 | Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
-| Apple | 3 | 1.5 | 4.5 |
+| Apple | 3 | 1.5 | |
 `);
 
 result.rows[0].cells[3].computed; // 4.5
 result.errors;                    // []
 ```
 
-## Core Library — Dual Output
+## Tooling
 
-`@calcmd/core` builds two formats:
-- `dist/index.js` — CommonJS (for Node.js, Jest)
-- `dist/esm/index.js` — ESM (for Vite, bundlers)
-
-The `exports` field in `package.json` routes automatically based on the consumer.
-
-```bash
-pnpm test
-# or
-pnpm --filter @calcmd/core test
-```
+- pnpm workspaces + Turborepo (build orchestration + caching)
+- TypeScript 5 with shared tsconfig base
+- ESLint + Prettier
+- Jest + ts-jest for testing
+- GitHub Actions CI (test + lint on PR, auto-deploy website)
+- Dependabot for dependency updates
 
 ## License
 
