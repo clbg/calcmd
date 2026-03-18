@@ -15,7 +15,11 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "jest",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch -p tsconfig.esm.json"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node"
   },
   "keywords": ["calcmd", "markdown", "table", "formula"],
   "author": "CalcMD Team",

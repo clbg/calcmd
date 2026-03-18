@@ -4,26 +4,29 @@ export type CellValue = number | string | boolean | null;
 
 export interface Cell {
   value: CellValue;
-  formula?: string;  // Raw formula string (e.g., "=Qty*Price")
-  computed?: CellValue;  // Computed result
+  formula?: string;        // Raw formula string (e.g., "Qty*Price")
+  effectiveFormula?: string; // After expansion: cell formula or column formula
+  computed?: CellValue;    // Computed result
   error?: string;
 }
 
 export interface Column {
-  name: string;
-  formula?: string;  // Column-level formula (e.g., "Qty*Price")
+  name: string;            // Display name (e.g., "Adjusted Gross Income")
+  alias?: string;          // Optional #alias (e.g., "agi")
+  formula?: string;        // Column-level formula template (e.g., "Qty*Price")
   cells: Cell[];
 }
 
 export interface Row {
-  label?: string;  // Optional @label for row reference
+  label?: string;          // Optional @label for row reference
   cells: Cell[];
 }
 
 export interface Table {
   columns: Column[];
   rows: Row[];
-  labels: Map<string, number>;  // @label → row index
+  labels: Map<string, number>;       // @label → row index
+  aliases: Map<string, string>;      // alias → column display name
 }
 
 export interface ParsedTable extends Table {
@@ -31,15 +34,18 @@ export interface ParsedTable extends Table {
   errors: ValidationError[];
 }
 
+// Cell-granularity dependency graph
 export interface DependencyGraph {
-  nodes: Map<string, DependencyNode>;  // column name → node
-  edges: Map<string, Set<string>>;     // from → to
+  nodes: Map<string, CellNode>;      // "R{row}.C{col}" → node
+  edges: Map<string, Set<string>>;   // from → Set<to> (dependency edges)
+  order: string[];                   // topological evaluation order
 }
 
-export interface DependencyNode {
-  column: string;
-  formula?: string;
-  dependsOn: string[];  // List of column names this depends on
+export interface CellNode {
+  id: string;              // "R{row}.C{col}"
+  row: number;
+  col: number;
+  formula?: string;        // effective formula for this cell
 }
 
 export interface ValidationError {
@@ -53,9 +59,11 @@ export interface EvaluationContext {
   currentRow: Row;
   rowIndex: number;
   table: Table;
-  columns: Map<string, Column>;
+  columns: Map<string, Column>;      // name → Column
+  aliases: Map<string, string>;      // alias → column name
   labels: Map<string, number>;
 }
+
 
 // AST types for formula expressions
 export type Expression =
@@ -80,7 +88,7 @@ export interface ColumnRefExpression {
 export interface LabelRefExpression {
   type: 'label';
   label: string;
-  column?: string;  // Optional: @label.Column
+  column?: string;
 }
 
 export interface BinaryExpression {

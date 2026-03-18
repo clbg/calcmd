@@ -17,14 +17,16 @@ export type {
   ParsedTable,
   ValidationError,
   Expression,
-  EvaluationContext
+  EvaluationContext,
+  DependencyGraph,
+  CellNode
 } from './types';
 
 // Main API
 export function calcmd(markdown: string): ParsedTable {
   const parser = new Parser();
   const table = parser.parse(markdown);
-  
+
   const evaluator = new Evaluator();
   return evaluator.evaluate(table);
 }
