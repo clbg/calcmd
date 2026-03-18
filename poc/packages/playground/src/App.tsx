@@ -41,8 +41,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>CalcMD Playground</h1>
-        <p>Real-time Markdown Table Calculator</p>
+        <h1>Calc<span className="accent">MD</span> Playground</h1>
         <div className="examples">
           {EXAMPLES.map((ex, i) => (
             <button key={i} onClick={() => loadExample(i)}>

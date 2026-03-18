@@ -5,58 +5,61 @@
 }
 
 .App-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1.5rem 2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  background: var(--bg);
+  flex-shrink: 0;
 }
 
 .App-header h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
+  font-size: 1.1rem;
   font-weight: 700;
+  margin: 0;
+}
+
+.App-header h1 .accent {
+  color: var(--accent);
 }
 
 .App-header p {
-  margin: 0 0 1rem 0;
-  opacity: 0.9;
+  display: none;
 }
 
 .examples {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
 .examples button {
-  background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  font-size: 0.8rem;
+  transition: all 0.15s;
 }
 
 .examples button:hover {
-  background: rgba(255,255,255,0.3);
-  transform: translateY(-1px);
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--muted);
 }
 
 .App-content {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  padding: 1rem;
   overflow: hidden;
 }
 
 .panel {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -64,15 +67,19 @@
 
 .panel h2 {
   margin: 0;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-  font-size: 1.125rem;
-  font-weight: 600;
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
 }
 
 .editor-panel {
-  overflow: hidden;
+  border-right: 1px solid var(--border);
 }
 
 .preview-panel {
@@ -80,23 +87,27 @@
 }
 
 .error-banner {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  color: #856404;
-  padding: 1rem;
-  margin: 1rem;
-  border-radius: 4px;
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: var(--error);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
 }
 
 .errors {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .errors h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .errors ul {
@@ -106,29 +117,31 @@
 }
 
 .errors li {
-  padding: 0.5rem;
+  padding: 0.4rem 0.6rem;
   margin: 0.25rem 0;
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  font-family: "SF Mono", "Fira Code", monospace;
 }
 
-.error-parse {
-  background: #f8d7da;
-  color: #721c24;
+.error-parse,
+.error-runtime {
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--error);
 }
 
 .error-validation {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.error-runtime {
-  background: #f8d7da;
-  color: #721c24;
+  background: rgba(210, 153, 34, 0.1);
+  color: var(--warning);
 }
 
 @media (max-width: 1024px) {
   .App-content {
     grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .editor-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
   }
 }

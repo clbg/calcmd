@@ -25,6 +25,10 @@ const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) =
     // Has formula
     if (cell.formula || column.formula) {
       classes.push('has-formula');
+      // Aggregation formula
+      if (/sum|avg|min|max|count/i.test(cell.formula ?? '')) {
+        classes.push('has-agg');
+      }
     }
     
     // Has error
