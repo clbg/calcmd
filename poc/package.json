@@ -3,9 +3,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm --filter @calcmd/core build",
-    "dev": "pnpm --filter @calcmd/core build && pnpm --parallel --filter @calcmd/core --filter @calcmd/playground dev",
-    "dev:website": "pnpm --filter @calcmd/core build && pnpm --parallel --filter @calcmd/core --filter @calcmd/website dev",
-    "dev:all": "pnpm --filter @calcmd/core build && pnpm --parallel --filter @calcmd/core --filter @calcmd/playground --filter @calcmd/website dev",
+    "dev": "pnpm --filter @calcmd/core build && pnpm --parallel --filter @calcmd/core --filter @calcmd/website dev",
     "build:website": "pnpm --filter @calcmd/core build && pnpm --filter @calcmd/website build",
     "test": "pnpm --filter @calcmd/core test"
   }

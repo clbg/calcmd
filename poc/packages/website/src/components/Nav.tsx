@@ -1,6 +1,10 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Nav() {
+  const location = useLocation();
+  const isPlayground = location.pathname.includes('/playground');
+
   return (
     <nav style={{
       borderBottom: '1px solid var(--border)',
@@ -14,14 +18,23 @@ export default function Nav() {
       background: 'var(--bg)',
       zIndex: 10,
     }}>
-      <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>
+      <Link to="/" style={{ textDecoration: 'none', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text)' }}>
         Calc<span style={{ color: 'var(--accent)' }}>MD</span>
-      </span>
+      </Link>
       <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
-        <a href="#syntax" style={{ color: 'var(--muted)' }}>Syntax</a>
-        <a href="#features" style={{ color: 'var(--muted)' }}>Features</a>
-        <a href="#demo" style={{ color: 'var(--muted)' }}>Demo</a>
-        <a href="https://github.com/clbg/calcmd" target="_blank" rel="noreferrer" style={{ color: 'var(--muted)' }}>GitHub</a>
+        {!isPlayground && (
+          <>
+            <a href="#syntax" style={{ color: 'var(--muted)' }}>Syntax</a>
+            <a href="#features" style={{ color: 'var(--muted)' }}>Features</a>
+            <a href="#demo" style={{ color: 'var(--muted)' }}>Demo</a>
+          </>
+        )}
+        <Link to="/playground" style={{ color: isPlayground ? 'var(--accent)' : 'var(--muted)' }}>
+          Playground
+        </Link>
+        <a href="https://github.com/clbg/calcmd" target="_blank" rel="noreferrer" style={{ color: 'var(--muted)' }}>
+          GitHub
+        </a>
       </div>
     </nav>
   );

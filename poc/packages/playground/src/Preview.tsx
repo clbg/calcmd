@@ -1,8 +1,7 @@
 import React from 'react';
 import { ParsedTable, CellValue } from '@calcmd/core';
-import './Preview.css';
 
-interface PreviewProps {
+export interface PreviewProps {
   table: ParsedTable;
   selectedCell: {row: number; col: number} | null;
   onCellClick: (row: number, col: number) => void;

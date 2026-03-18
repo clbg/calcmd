@@ -1,7 +1,6 @@
 import React from 'react';
-import './Editor.css';
 
-interface EditorProps {
+export interface EditorProps {
   value: string;
   onChange: (value: string) => void;
 }

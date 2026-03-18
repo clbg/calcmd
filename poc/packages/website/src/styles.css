@@ -10,6 +10,8 @@
   --accent2: #3fb950;
   --formula-bg: #1c2d3f;
   --formula-border: #388bfd;
+  --error: #f85149;
+  --warning: #d29922;
 }
 
 body {
