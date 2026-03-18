@@ -21,6 +21,6 @@
   </g>
 
   <!-- Wordmark -->
-  <text x="80" y="50" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="48" font-weight="800" letter-spacing="-2.5" fill="#111827">Calc</text>
+  <text x="80" y="50" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="48" font-weight="800" letter-spacing="-2.5" fill="#94a3b8">Calc</text>
   <text x="192" y="50" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="48" font-weight="800" letter-spacing="-2.5" fill="#6366f1">MD</text>
 </svg>
