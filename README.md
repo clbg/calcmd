@@ -6,6 +6,10 @@
   An open specification that extends markdown table syntax with embedded formulas.
 </p>
 
+<p align="center">
+  <a href="https://clbg.github.io/calcmd/">Website</a> · <a href="https://clbg.github.io/calcmd/playground">Try It Online</a>
+</p>
+
 ## Project Structure
 
 ```
