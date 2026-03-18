@@ -4,11 +4,11 @@ on:
   push:
     branches: [master]
     paths:
-      - 'poc/packages/website/**'
-      - 'poc/packages/ui/**'
-      - 'poc/packages/core/**'
-      - 'poc/package.json'
-      - 'poc/pnpm-workspace.yaml'
+      - 'packages/website/**'
+      - 'packages/ui/**'
+      - 'packages/core/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/deploy-website.yml'
 
 permissions:
@@ -27,31 +27,29 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: poc/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install
-        working-directory: poc
 
       - name: Build website
         run: pnpm build:website
-        working-directory: poc
 
-      - uses: actions/configure-pages@v4
+      - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: poc/packages/website/dist
+          path: packages/website/dist
 
-      - uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v5
         id: deployment
