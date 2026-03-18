@@ -23,7 +23,7 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
-  packages/playground:
+  packages/ui:
     dependencies:
       '@calcmd/core':
         specifier: workspace:*
@@ -50,9 +50,9 @@ importers:
       '@calcmd/core':
         specifier: workspace:*
         version: link:../core
-      '@calcmd/playground':
+      '@calcmd/ui':
         specifier: workspace:*
-        version: link:../playground
+        version: link:../ui
       react:
         specifier: ^18.2.0
         version: 18.3.1

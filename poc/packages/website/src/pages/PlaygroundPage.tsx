@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { calcmd, ParsedTable } from '@calcmd/core';
-import { Editor, Preview, EXAMPLES } from '@calcmd/playground';
+import { Editor, Preview, EXAMPLES } from '@calcmd/ui';
 import '../playground.css';
 
 export default function PlaygroundPage() {

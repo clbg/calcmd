@@ -7,8 +7,8 @@ export default defineConfig({
   base: '/calcmd/',
   resolve: {
     alias: {
-      // Allow importing playground source directly (component library, no build step)
-      '@calcmd/playground': path.resolve(__dirname, '../playground/src'),
+      // Allow importing UI component source directly (no build step)
+      '@calcmd/ui': path.resolve(__dirname, '../ui/src'),
     },
   },
   optimizeDeps: {

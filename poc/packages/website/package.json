@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@calcmd/core": "workspace:*",
-    "@calcmd/playground": "workspace:*",
+    "@calcmd/ui": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.13.1"

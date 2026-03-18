@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - 'poc/packages/website/**'
-      - 'poc/packages/playground/**'
+      - 'poc/packages/ui/**'
       - 'poc/packages/core/**'
       - 'poc/package.json'
       - 'poc/pnpm-workspace.yaml'
