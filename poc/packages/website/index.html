@@ -4,9 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CalcMD — Verifiable Tables for the AI Era</title>
+    <meta name="description" content="CalcMD is an open specification that extends markdown tables with embedded formulas, making AI-generated calculations transparent, checkable, and Git-friendly." />
+    <link rel="canonical" href="https://clbg.github.io/calcmd/" />
+    <!-- Open Graph for social sharing -->
+    <meta property="og:title" content="CalcMD — Verifiable Tables for the AI Era" />
+    <meta property="og:description" content="An open specification that extends markdown tables with embedded formulas. Transparent, checkable, Git-friendly." />
+    <meta property="og:url" content="https://clbg.github.io/calcmd/" />
+    <meta property="og:type" content="website" />
   </head>
   <body>
     <div id="root"></div>
+    <!-- Fallback content for crawlers and no-JS environments -->
+    <noscript>
+      <h1>CalcMD — Verifiable Tables for the AI Era</h1>
+      <p>CalcMD is an open specification that extends markdown tables with embedded formulas, making AI-generated calculations transparent, checkable, and Git-friendly.</p>
+      <p>Formulas use human-readable column names (like <code>Total=Qty*Price</code>) instead of cell references. They degrade gracefully in any standard markdown viewer and diff cleanly in Git.</p>
+      <p>Supported features: arithmetic, comparisons, logical operators, aggregations (sum, avg, min, max, count), math functions (round, abs, floor, ceil), and conditionals (if).</p>
+      <p><a href="https://github.com/clbg/calcmd">View the specification and source code on GitHub</a></p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
