@@ -161,7 +161,7 @@ export class FormulaParser {
   }
 
   private parseComparison(): Expression {
-    let left = this.parseAdditive();
+    const left = this.parseAdditive();
     
     const compOps = ['==', '!=', '>', '<', '>=', '<='];
     if (this.check('operator') && compOps.includes(this.peek().value)) {

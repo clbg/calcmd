@@ -150,7 +150,7 @@ export class Parser {
 
     // Remove Markdown formatting (bold, italic)
     trimmed = trimmed.replace(/^\*\*(.*)\*\*$/, '$1');
-    trimmed = trimmed.replace(/^__(.*)\__$/, '$1');
+    trimmed = trimmed.replace(/^__(.*)__$/, '$1');
     if (!trimmed.includes('=')) {
       trimmed = trimmed.replace(/^\*(.*)\*$/, '$1');
       trimmed = trimmed.replace(/^_(.*)_$/, '$1');

@@ -1,10 +1,20 @@
 {
   "name": "@calcmd/root",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "pnpm --filter @calcmd/core build",
     "dev": "pnpm --filter @calcmd/core build && pnpm --parallel --filter @calcmd/core --filter @calcmd/website dev",
     "build:website": "pnpm --filter @calcmd/core build && pnpm --filter @calcmd/website build",
-    "test": "pnpm --filter @calcmd/core test"
+    "test": "pnpm --filter @calcmd/core test",
+    "lint": "eslint packages/",
+    "format": "prettier --write 'packages/**/*.{ts,tsx}'"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.57.1"
   }
 }
