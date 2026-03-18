@@ -1,6 +1,10 @@
-# CalcMD
+<p align="center">
+  <img src="packages/website/public/logo.svg" alt="CalcMD" width="320" />
+</p>
 
-Calculated Markdown Tables — an open specification that extends markdown table syntax with embedded formulas.
+<p align="center">
+  An open specification that extends markdown table syntax with embedded formulas.
+</p>
 
 ## Project Structure
 
