@@ -22,20 +22,20 @@
 
 ### Example 2: Travel Expense Split
 ```markdown
-| Date | Item | Amount | Payer | Charlie_owes | ZZL_owes |
+| Date | Item | Amount | Payer | Charlie_owes | Jason_owes |
 |------|------|--------|-------|--------------|----------|
-| 2026-02-14 | Ramen | 3000 | Charlie | =if(Payer=="Charlie",0,Amount/2) | =if(Payer=="ZZL",0,Amount/2) |
+| 2026-02-14 | Ramen | 3000 | Charlie | =if(Payer=="Charlie",0,Amount/2) | =if(Payer=="Jason",0,Amount/2) |
 | 2026-02-14 | Tickets | 400 | Charlie | 0 | 200 |
-| 2026-02-14 | Train | 2680 | ZZL | 1340 | 0 |
-| 2026-02-15 | Dinner | 6260 | ZZL | 3130 | 0 |
+| 2026-02-14 | Train | 2680 | Jason | 1340 | 0 |
+| 2026-02-15 | Dinner | 6260 | Jason | 3130 | 0 |
 | **Charlie paid** | | **3400=sum_if(Payer=="Charlie",Amount)** | | | |
-| **ZZL paid** | | **8940=sum_if(Payer=="ZZL",Amount)** | | | |
+| **Jason paid** | | **8940=sum_if(Payer=="Jason",Amount)** | | | |
 | **Charlie owes** | | | | **4470=sum(Charlie_owes)** | |
-| **ZZL owes** | | | | | **200=sum(ZZL_owes)** |
-| **Settlement** | | **4270=ZZL_owes-Charlie_owes** | | | |
+| **Jason owes** | | | | | **200=sum(Jason_owes)** |
+| **Settlement** | | **4270=Jason_owes-Charlie_owes** | | | |
 ```
 
-**Interpretation**: ZZL should pay Charlie 4270 JPY
+**Interpretation**: Jason should pay Charlie 4270 JPY
 
 ---
 

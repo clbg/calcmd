@@ -12,14 +12,14 @@ export const EXAMPLES = [
   },
   {
     name: 'Travel Expense Split',
-    markdown: `| Item | Amount | Payer | PC_owes | ZZL_owes |
+    markdown: `| Item | Amount | Payer | Charlie_owes | Jason_owes |
 |------|--------|-------|---------|----------|
-| Ramen | 3000 | PC | 0 | =Amount/2 |
-| Tickets | 400 | PC | 0 | =Amount/2 |
-| Train | 2680 | ZZL | =Amount/2 | 0 |
-| Dinner | 6260 | ZZL | =Amount/2 | 0 |
-| **PC Total** | | | **=sum(PC_owes)** | |
-| **ZZL Total** | | | | **=sum(ZZL_owes)** |`
+| Ramen | 3000 | Charlie | 0 | =Amount/2 |
+| Tickets | 400 | Charlie | 0 | =Amount/2 |
+| Train | 2680 | Jason | =Amount/2 | 0 |
+| Dinner | 6260 | Jason | =Amount/2 | 0 |
+| **Charlie Total** | | | **=sum(Charlie_owes)** | |
+| **Jason Total** | | | | **=sum(Jason_owes)** |`
   },
   {
     name: 'Sales Report',

@@ -74,10 +74,10 @@
 **Scenario**:
 ```
 1. User asks ChatGPT: "We went to Akita. Here are expenses: [list]. 
-   Split between Charlie and ZZL. How much does each person owe?"
+   Split between Charlie and Jason. How much does each person owe?"
 
 2. ChatGPT generates CalcMD table:
-   | Item | Amount | Payer | Split | Charlie_owes | ZZL_owes |
+   | Item | Amount | Payer | Split | Charlie_owes | Jason_owes |
    |------|--------|-------|-------|--------------|----------|
    | ...  | ...    | ...   | ...   | =if(Payer=="Charlie",0,Amount/2) | ... |
 
