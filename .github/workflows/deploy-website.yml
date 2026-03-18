@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'poc/packages/website/**'
+      - 'poc/packages/playground/**'
       - 'poc/packages/core/**'
       - 'poc/package.json'
       - 'poc/pnpm-workspace.yaml'
@@ -26,15 +27,15 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: poc/pnpm-lock.yaml
 
@@ -48,9 +49,9 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: poc/packages/website/dist
 
-      - uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v5
         id: deployment
