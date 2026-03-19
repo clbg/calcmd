@@ -35,6 +35,10 @@
   line-height: 1.6;
   resize: none;
   tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: auto;
+  word-wrap: normal;
 }
 
 .editor-textarea::placeholder {
