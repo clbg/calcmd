@@ -7,6 +7,7 @@ import { ParsedTable } from './types';
 export { Parser } from './parser';
 export { FormulaParser } from './formula-parser';
 export { Evaluator } from './evaluator';
+export { format, fill } from './utils';
 
 export type {
   Table,
@@ -19,7 +20,7 @@ export type {
   Expression,
   EvaluationContext,
   DependencyGraph,
-  CellNode
+  CellNode,
 } from './types';
 
 // Main API
