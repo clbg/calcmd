@@ -1,8 +1,8 @@
 # Specification: CalcMD v0.1
 
 > **Status**: Draft  
-> **Version**: 0.1.4  
-> **Last Updated**: 2026-03-18
+> **Version**: 0.1.5  
+> **Last Updated**: 2026-03-19
 
 ---
 
@@ -97,16 +97,16 @@ When a column has a header formula AND a cell in that column has its own formula
 | Item   | Qty | Price | Total=Qty*Price     |
 |--------|-----|-------|---------------------|
 | Widget | 10  | 5     |                     |
-| @gd: Gadget | 3 | 20  |                     |
-| Half   |     |       | =@gd.Total / 2     |
-| @total: Sum  |  |     | **=sum(Total)**     |
+| Gadget | 3   | 20    | @gd:                |
+| Half   |     |       | =@gd / 2           |
+| Sum    |     |       | **=sum(Total)**     |
 ```
 
 **Evaluation**:
 - Row "Widget": `Total` uses column formula → `10*5 = 50`
-- Row "Gadget" (label `gd`): `Total` uses column formula → `3*20 = 60`
+- Row "Gadget": `Total` uses column formula → `3*20 = 60`, and the cell is labeled `gd`
 - Row "Half": `Total` uses **cell formula** (overrides column formula) → `60/2 = 30`
-- Row "Sum" (label `total`): `Total` uses **cell formula** (overrides column formula) → `sum(Total) = 110`
+- Row "Sum": `Total` uses **cell formula** (overrides column formula) → `sum(Total) = 110`
 
 This design mirrors Excel Structured Tables: the column formula is a convenience for the common case, but individual cells can always override it.
 
@@ -159,16 +159,16 @@ Column names can be long or awkward in formulas. To improve ergonomics without r
 - Aliases MUST be unique within a table. Duplicate aliases → error.
 - An alias MUST NOT collide with another column's full name (after underscore normalization). E.g., if a column is named `Rate`, another column cannot use `#Rate` as an alias.
 
-**With row labels**:
+**With cell labels**:
 ```markdown
-| Line | Description | Adjusted Gross Income #agi |
-|------|-------------|----------------------------|
-| 1    | @wages: Gross Income | 85000               |
-| 2    | @ded: Deductions     | 13850               |
-| 3    | Taxable Income       | =@wages.agi - @ded.agi |
+| Line | Description      | Adjusted Gross Income #agi |
+|------|------------------|----------------------------|
+| 1    | Gross Income     | @wages: 85000              |
+| 2    | Deductions       | @ded: 13850                |
+| 3    | Taxable Income   | =@wages - @ded             |
 ```
 
-`@wages.agi` is equivalent to `@wages.Adjusted_Gross_Income` — shorter and less error-prone.
+`@wages` and `@ded` directly reference the labeled cells' values — no need for `.Column` syntax.
 
 **Column alias + column formula**:
 ```markdown
@@ -209,7 +209,7 @@ For example, `**300=sum(Amount)**` is parsed as the formula `300=sum(Amount)` wi
 CalcMD supports:
 1. **Literals**: `123`, `3.14`, `"text"`, `true`, `false`
 2. **Column references**: `Qty`, `Price`, `Unit_Price`
-3. **Row label references**: `@label`, `@label.Column` (see Section 3.5)
+3. **Cell label references**: `@label` (see Section 3.5)
 4. **Operators**: `+`, `-`, `*`, `/`, `%`, `()`, comparison, logical
 5. **Functions**: Whitelist only (see Section 3.3)
 
@@ -329,9 +329,9 @@ CalcMD uses **strict typing** with minimal coercion:
 
 **Note**: No implicit number ↔ string conversion. This is intentional to prevent subtle bugs in AI-generated tables.
 
-### 3.5 Row Label References
+### 3.5 Cell Labels
 
-Row labels allow formulas to reference specific cells by row name + column name, using the `@` prefix.
+Cell labels allow formulas to reference specific cells by name, using the `@` prefix. A label gives a cell a name; referencing that label returns the cell's value directly.
 
 #### Declaring a Label
 
@@ -349,43 +349,57 @@ The label is stripped during parsing; the cell's effective value is `cell_value`
 
 **Example**:
 ```markdown
-| Line | Description          | Amount |
-|------|----------------------|--------|
-| 1    | @wages: Gross Income | 85000  |
-| 2    | @ded: Deductions     | 13850  |
-| 3    | Taxable Income       | =@wages.Amount - @ded.Amount |
+| Line | Description  | Amount          |
+|------|--------------|-----------------|
+| 1    | Gross Income | @wages: 85000   |
+| 2    | Deductions   | @ded: 13850     |
+| 3    | Taxable      | =@wages - @ded  |
 ```
 
-- Row 1, Description cell: label is `wages`, cell value is `Gross Income`
-- Row 2, Description cell: label is `ded`, cell value is `Deductions`
-- Row 3 has no label
+- Row 1, Amount cell: label is `wages`, cell value is `85000`
+- Row 2, Amount cell: label is `ded`, cell value is `13850`
+- Row 3, Amount cell: formula references `@wages` (→ 85000) and `@ded` (→ 13850)
 
 **Rules**:
 1. A label MAY appear in any column, not just the first column.
-2. Each row MAY have at most one label. If multiple cells in the same row declare labels, the parser MUST report an error.
+2. A row MAY have multiple cell labels — each label is bound to its own cell.
 3. Label names are case-sensitive: `@wages` and `@Wages` are different labels.
 4. Label names MUST be unique within a table. Duplicate labels → error.
 5. A cell with only `@label_name` (no colon, no value) is shorthand for `@label_name: @label_name` — the label is declared and the cell value is the string `@label_name`. This preserves backward compatibility and graceful degradation.
 
-**Graceful degradation**: In a plain markdown renderer, `@wages: Gross Income` displays as-is. The `@wages:` prefix is visible but human-readable — readers can infer it's a label marker.
+**Label on a formula cell**: A label MAY be attached to a cell that also has a formula. The label names the cell's computed value:
+
+```markdown
+| Item   | Qty | Price | Total=Qty*Price |
+|--------|-----|-------|-----------------|
+| Widget | 10  | 5     | @wt:            |
+| Gadget | 3   | 20    |                 |
+| Diff   |     |       | =@wt - 60      |
+```
+
+Row "Widget", Total cell: the column formula computes `10*5 = 50`, and the cell is labeled `wt`. `@wt` in other formulas resolves to `50`.
+
+When a label is declared with an empty value after the colon (e.g., `@wt:` or `@wt: `), the cell's effective value is determined by the column formula if one exists, or `null` otherwise. The label simply names whatever value the cell holds.
+
+**Graceful degradation**: In a plain markdown renderer, `@wages: 85000` displays as-is. The `@wages:` prefix is visible but human-readable — readers can infer it's a label marker.
 
 #### Referencing a Label
 
-Formulas reference labeled cells using `@label.Column`:
+Formulas reference labeled cells using bare `@label`:
 
-- **`@label.Column`** — returns the value of the specified column in the labeled row.
+- **`@label`** — returns the value of the labeled cell.
 
 ```markdown
-| Category             | Q1   | Q2   | Total=Q1+Q2              |
-|----------------------|------|------|--------------------------|
-| @rev: Revenue        | 5000 | 6000 |                          |
-| @cost: Cost          | 3000 | 3500 |                          |
-| Profit               |      |      | =@rev.Total - @cost.Total |
+| Category | Q1   | Q2   | Total=Q1+Q2              |
+|----------|------|------|--------------------------|
+| Revenue  | @r1: 5000 | @r2: 6000 |                 |
+| Cost     | @c1: 3000 | @c2: 3500 |                 |
+| Profit   |      |      | =(@r1+@r2) - (@c1+@c2)  |
 ```
 
-**Bare `@label` (without `.Column`)**: Not recommended. Implementations MAY support bare `@label` as a convenience (e.g., returning the last numeric value in the row), but this behavior is implementation-defined and not portable. Formulas intended to be portable across implementations MUST use `@label.Column`.
+Each `@label` resolves to exactly one cell's value. There is no `.Column` syntax — if you need to reference multiple cells in the same row, label each cell individually.
 
-> **Open question for future versions**: The `@label.Column` syntax requires knowing the column name, which can be awkward when column names are long or unusual. Future versions may consider column aliases or positional references (e.g., `@label[2]`) as ergonomic improvements. See backlog.
+**Design rationale**: This "one label, one value" model mirrors variable assignment. `@wages: 85000` reads as "wages = 85000". Referencing `@wages` in a formula is like using a variable — simple, direct, no indirection through row/column coordinates.
 
 ---
 
@@ -435,7 +449,7 @@ Cell values (not inside formulas) are parsed as:
 3. **Dependency Analysis**: Build a directed acyclic graph (DAG) at **cell granularity**. Each cell with a formula is a node. Edges represent dependencies:
    - Column reference in a row-level formula → edge to the referenced cell in the same row
    - Aggregation function (`sum(Col)`, etc.) → edges to all cells in the referenced column (excluding the current row)
-   - Label reference (`@label.Col`) → edge to the specific cell in the labeled row
+   - Cell label reference (`@label`) → edge to the specific labeled cell
 4. **Topological Sort**: Determine evaluation order from the DAG. Cells with no dependencies are evaluated first.
 5. **Compute**: Evaluate formulas in topological order
 6. **Validate**: If display values are present, compare with computed results
@@ -486,16 +500,16 @@ After expansion:
 The dependency graph ensures Row 0 and Row 1 `Subtotal` cells are evaluated before Row 2's `sum(Subtotal)`.
 
 #### Cell Override with Cross-Row Reference
-A cell formula MAY reference another row's computed value in the same column:
+A cell formula MAY reference another row's computed value via a cell label:
 ```markdown
 | Item   | Qty | Price | Total=Qty*Price    |
 |--------|-----|-------|--------------------|
 | Widget | 10  | 5     |                    |
-| @gd: Gadget | 3 | 20 |                    |
-| Half   |     |       | =@gd.Total / 2    |
+| Gadget | 3   | 20    | @gd:               |
+| Half   |     |       | =@gd / 2          |
 ```
 
-Row "Half" overrides the column formula and references `@gd.Total`. The dependency graph tracks this: `Half.Total → Gadget.Total → Gadget.Qty, Gadget.Price`.
+Row "Half" overrides the column formula and references `@gd` (the labeled Total cell in the Gadget row). The dependency graph tracks this: `Half.Total → @gd (Gadget.Total) → Gadget.Qty, Gadget.Price`.
 
 ### 5.3 Circular References
 
@@ -511,20 +525,20 @@ Circular dependencies are **forbidden**:
 
 **Same-column cross-row references** are allowed as long as they don't form a cycle:
 ```markdown
-| Item       | Value          |
-|------------|----------------|
-| @a: First  | 100            |
-| B          | =@a.Value * 2  |
+| Item       | Value           |
+|------------|-----------------|
+| First      | @a: 100         |
+| B          | =@a * 2        |
 ```
 
 But:
 ```markdown
-| Item       | Value          |
-|------------|----------------|
-| @a: First  | =@b.Value + 1  |
-| @b: Second | =@a.Value + 1  |
+| Item       | Value           |
+|------------|-----------------|
+| First      | @a: =@b + 1    |
+| Second     | @b: =@a + 1    |
 ```
-→ ERROR: `@a.Value → @b.Value → @a.Value`
+→ ERROR: `@a → @b → @a`
 
 ### 5.4 Execution Limits
 
@@ -766,6 +780,7 @@ The backlog is organized by category (functions, spec inconsistencies, underspec
 
 ## 11. Version History
 
+- **v0.1.5** (2026-03-19): Redesigned label system — labels are now cell-level instead of row-level (§3.5). `@label` directly returns the labeled cell's value; removed `@label.Column` syntax. Multiple labels per row are now allowed. Each label is bound to exactly one cell, following a "one label, one value" model analogous to variable assignment.
 - **v0.1.4** (2026-03-18): Added Design Goal 6 "Non-intrusive" — CalcMD adapts to user's table, not the other way around (§1.2). Added column alias syntax `#alias` in headers (§2.5) for ergonomic formula references without restricting column naming freedom.
 - **v0.1.3** (2026-03-18): Row label syntax redesigned — `@label: value` with colon+space delimiter, label can appear in any column (§3.5). Bare `@label` marked as implementation-defined. Resolved U-01 and U-02.
 - **v0.1.2** (2026-03-18): Column formula is now a default template — cell formula overrides column formula (§2.3C). Execution model rewritten: added expansion phase, dependency graph at cell granularity, topological sort, cycle detection with cycle-path reporting (§5.1–5.3). Added same-column cross-row reference examples.
@@ -791,4 +806,4 @@ This specification is released under CC0 1.0 Universal (Public Domain).
 
 ---
 
-Last updated: 2026-03-18
+Last updated: 2026-03-19

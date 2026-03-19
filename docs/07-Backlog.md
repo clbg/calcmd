@@ -41,7 +41,7 @@
 | S-04 | Cell vs column formula 优先级 (§2.3C) | P0 | Spec v0.1.2: cell formula 覆盖 column formula。POC: column formula 优先，cell formula 被忽略。 | 反转优先级：先检查 cell formula，没有才 fallback 到 column formula。 |
 | S-05 | Dependency graph 缺失 (§5.1) | P0 | Spec v0.1.2: 要求 cell 粒度 DAG + 拓扑排序。POC: 按行顺序求值，`DependencyGraph` 类型已定义但未使用。 | 实现 expansion phase + cell-level DAG + 拓扑排序求值。 |
 | S-06 | 循环引用检测 (§5.3) | P0 | Spec v0.1.2: 要求检测环并报告环路径。POC: 无循环检测，静默产生错误结果。 | DAG 构建时检测环，报错含路径。 |
-| S-07 | Label 语法不匹配 (§3.5) | P1 | Spec v0.1.3: `@label: value` 语法，任意列。POC: 只检查第一列 `@label`，无冒号分隔，label 替代 cell 值。 | 重写 parser label 检测逻辑，支持任意列 + 冒号分隔。 |
+| S-07 | Label 语法不匹配 (§3.5) | P1 | Spec v0.1.5: `@label: value` cell label 语法，任意列，多 label per row。POC: 只检查第一列 `@label`，无冒号分隔，label 替代 cell 值，仍使用 `@label.Column` 引用。 | 重写 parser label 检测逻辑，支持任意列 + 冒号分隔 + bare `@label` 引用（返回 labeled cell 值），移除 `@label.Column` 支持。 |
 | S-08 | Column alias 未实现 (§2.5) | P1 | Spec v0.1.4: `#alias` 语法在 header 声明列别名。POC: 不支持。 | parser 解析 header 时检测 `#alias` 后缀，建立 alias → column 映射，formula parser / evaluator 解析列引用时查 alias。 |
 
 ---
@@ -50,8 +50,8 @@
 
 | ID | Area | Priority | Issue | Proposed Resolution |
 |----|------|----------|-------|---------------------|
-| U-01 | Row labels (§3.5) | ~~P1~~ Done | 声明语法未定义。 | v0.1.3: 定义 `@label: value` 语法，任意列可声明，冒号+空格分隔。 |
-| U-02 | Bare `@label` reference | ~~P1~~ Done | 裸 `@label` fallback 行为任意。 | v0.1.3: 标记为 implementation-defined，推荐始终使用 `@label.Column`。 |
+| U-01 | Cell labels (§3.5) | ~~P1~~ Done | 声明语法未定义。 | v0.1.3: 定义 `@label: value` 语法。v0.1.5: 重新设计为 cell label，移除 `@label.Column`，bare `@label` 返回 labeled cell 值，允许一行多 label。 |
+| U-02 | Bare `@label` reference | ~~P1~~ Done | 裸 `@label` fallback 行为任意。 | v0.1.5: bare `@label` 是唯一引用方式，直接返回 labeled cell 值。`@label.Column` 语法已移除。 |
 | U-03 | Number precision (§4.4) | P1 | 无最低精度要求。 | 要求 IEEE 754 double。 |
 | U-04 | Display formatting (§4.4) | P1 | 计算值显示格式无规则。 | 定义默认：无尾零，最多 10 位小数。 |
 | U-05 | Escaping `=` (§2.7) | P1 | 规则非正式，边界不清。 | 定义正式语法规则。 |
@@ -92,7 +92,7 @@
 | FF-04 | Date/time support | 日期算术。按 non-goals 有意排除。 |
 | FF-05 | Currency/number formatting | 显示格式如 `$1,234.56`。 |
 | FF-06 | Nested aggregation expressions | `sum(if(...))` 模式。`sum_if` 是部分解法。 |
-| FF-07 | Label 引用列位置引用 | 考虑 `@label[N]`（1-indexed 列号）作为列名引用的 escape hatch。优先级低于列别名（已在 §2.5 定义）。 |
+| FF-07 | ~~Label 引用列位置引用~~ | ~~考虑 `@label[N]`（1-indexed 列号）作为列名引用的 escape hatch。~~ v0.1.5 cell label 重设计后不再需要——label 直接绑定 cell，无需列定位。 |
 
 ---
 
@@ -107,4 +107,4 @@
 
 ---
 
-Last updated: 2026-03-18
+Last updated: 2026-03-19
