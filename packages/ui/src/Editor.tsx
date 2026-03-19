@@ -1,8 +1,10 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import type { ParsedTable, CellValue } from '@calcmd/core';
 
 export interface EditorProps {
   value: string;
   onChange: (value: string) => void;
+  parsedTable?: ParsedTable;
 }
 
 // --- Placeholder implementations ---
@@ -112,14 +114,101 @@ function formatTableBlock(block: string[]): string[] {
   });
 }
 
-function fillComputedValues(markdown: string): string {
-  // TODO: evaluate formulas and fill in computed values
-  return markdown;
+function fillComputedValues(markdown: string, table: ParsedTable): string {
+  const lines = markdown.split('\n');
+  const result: string[] = [];
+  let rowIdx = 0; // tracks which data row we're on (skips header + separator)
+  let inTable = false;
+  let headerDone = false;
+  let sepDone = false;
+
+  for (const line of lines) {
+    if (!line.trim().startsWith('|')) {
+      // Reset table state when we leave a table block
+      inTable = false;
+      headerDone = false;
+      sepDone = false;
+      rowIdx = 0;
+      result.push(line);
+      continue;
+    }
+
+    if (!inTable) {
+      inTable = true;
+      headerDone = false;
+      sepDone = false;
+      rowIdx = 0;
+    }
+
+    if (!headerDone) {
+      // Header row — pass through unchanged
+      result.push(line);
+      headerDone = true;
+      continue;
+    }
+
+    if (!sepDone) {
+      // Separator row — pass through unchanged
+      result.push(line);
+      sepDone = true;
+      continue;
+    }
+
+    // Data row — rewrite cells that have computed values
+    const dataRow = table.rows[rowIdx];
+    if (!dataRow) {
+      result.push(line);
+      rowIdx++;
+      continue;
+    }
+
+    const rawCells = line
+      .trim()
+      .slice(1, -1) // strip outer pipes
+      .split('|');
+
+    const rewritten = rawCells.map((rawCell, colIdx) => {
+      const cell = dataRow.cells[colIdx];
+      const col = table.columns[colIdx];
+      if (!cell || !col) return rawCell;
+
+      const formula = cell.effectiveFormula;
+      if (!formula || cell.error || cell.computed === undefined) return rawCell;
+
+      const val = formatValue(cell.computed);
+      // Cell has its own formula (aggregation) → bold; column formula → plain
+      const isCellFormula = !!cell.formula;
+      const filled = isCellFormula ? `**${val}=${formula}**` : `${val}=${formula}`;
+      // Preserve surrounding whitespace from original cell
+      const leading = rawCell.match(/^(\s*)/)?.[1] ?? ' ';
+      const trailing = rawCell.match(/(\s*)$/)?.[1] ?? ' ';
+      return `${leading}${filled}${trailing}`;
+    });
+
+    result.push(`|${rewritten.join('|')}|`);
+    rowIdx++;
+  }
+
+  return result.join('\n');
 }
 
-function copyToClipboard(text: string): void {
-  // TODO: copy to clipboard with feedback
-  navigator.clipboard.writeText(text).catch(() => {});
+function formatValue(v: CellValue): string {
+  if (v === null) return '';
+  if (typeof v === 'number') {
+    // Avoid floating point noise: cap at 10 significant digits
+    return parseFloat(v.toPrecision(10)).toString();
+  }
+  return String(v);
+}
+
+// returns true on success, false on failure
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // --- Toolbar button ---
@@ -127,33 +216,38 @@ function copyToClipboard(text: string): void {
 interface ToolbarButtonProps {
   onClick: () => void;
   title: string;
+  disabled?: boolean;
   children: React.ReactNode;
 }
 
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({ onClick, title, children }) => (
+const ToolbarButton: React.FC<ToolbarButtonProps> = ({ onClick, title, disabled, children }) => (
   <button
     onClick={onClick}
     title={title}
+    disabled={disabled}
     style={{
       display: 'flex',
       alignItems: 'center',
       gap: '0.35rem',
       background: 'transparent',
       border: '1px solid var(--border)',
-      color: 'var(--muted)',
+      color: disabled ? 'var(--border)' : 'var(--muted)',
       padding: '0.25rem 0.6rem',
       borderRadius: 5,
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
       fontSize: '0.75rem',
       fontFamily: 'inherit',
       transition: 'color 0.15s, border-color 0.15s',
       whiteSpace: 'nowrap',
+      opacity: disabled ? 0.5 : 1,
     }}
     onMouseEnter={(e) => {
+      if (disabled) return;
       (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
       (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)';
     }}
     onMouseLeave={(e) => {
+      if (disabled) return;
       (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)';
       (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
     }}
@@ -164,17 +258,23 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({ onClick, title, children 
 
 // --- Editor ---
 
-const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
+const Editor: React.FC<EditorProps> = ({ value, onChange, parsedTable }) => {
+  const [copied, setCopied] = useState<'idle' | 'ok' | 'err'>('idle');
+
   const handleFormat = useCallback(() => {
     onChange(formatMarkdown(value));
   }, [value, onChange]);
 
   const handleFill = useCallback(() => {
-    onChange(fillComputedValues(value));
-  }, [value, onChange]);
+    if (!parsedTable) return;
+    onChange(fillComputedValues(value, parsedTable));
+  }, [value, onChange, parsedTable]);
 
   const handleCopy = useCallback(() => {
-    copyToClipboard(value);
+    copyToClipboard(value).then((ok) => {
+      setCopied(ok ? 'ok' : 'err');
+      setTimeout(() => setCopied('idle'), 1800);
+    });
   }, [value]);
 
   return (
@@ -188,7 +288,11 @@ const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
           Format
         </ToolbarButton>
 
-        <ToolbarButton onClick={handleFill} title="Evaluate formulas and fill computed values">
+        <ToolbarButton
+          onClick={handleFill}
+          title="Evaluate formulas and fill computed values"
+          disabled={!parsedTable}
+        >
           <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
             <path d="M3 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V4.5L9.5 1H3zm6 .5L13.5 5H10a1 1 0 0 1-1-1V1.5zM5 8.5h1.5V7H8v1.5h1.5V10H8v1.5H6.5V10H5V8.5z" />
           </svg>
@@ -196,10 +300,28 @@ const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
         </ToolbarButton>
 
         <ToolbarButton onClick={handleCopy} title="Copy markdown to clipboard">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M4 2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-1H8v1H2V5h1V4H2z" />
-          </svg>
-          Copy
+          {copied === 'ok' ? (
+            <>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
+              </svg>
+              Copied
+            </>
+          ) : copied === 'err' ? (
+            <>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zM7.25 5v4.5h1.5V5h-1.5zm0 5.5V12h1.5v-1.5h-1.5z" />
+              </svg>
+              Failed
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-1H8v1H2V5h1V4H2z" />
+              </svg>
+              Copy
+            </>
+          )}
         </ToolbarButton>
       </div>
 
