@@ -60,19 +60,19 @@ describe('Cell formula overrides column formula (§2.3C)', () => {
   });
 });
 
-describe('Row labels — @label: value syntax (§3.5)', () => {
-  test('@label: value in any column', () => {
+describe('Cell labels — @label: value syntax (§3.5)', () => {
+  test('@label: value on any cell', () => {
     const md = `
 | Line | Description | Amount |
 |------|-------------|--------|
-| 1 | @wages: Gross Income | 85000 |
-| 2 | @ded: Deductions | 13850 |
-| 3 | Taxable | =@wages.Amount - @ded.Amount |
+| 1 | Gross Income | @wages: 85000 |
+| 2 | Deductions | @ded: 13850 |
+| 3 | Taxable | =@wages - @ded |
     `.trim();
 
     const result = calcmd(md);
-    expect(result.rows[0].label).toBe('wages');
-    expect(result.rows[0].cells[1].value).toBe('Gross Income');
+    expect(result.rows[0].cells[2].label).toBe('wages');
+    expect(result.rows[0].cells[2].value).toBe(85000);
     expect(result.rows[2].cells[2].computed).toBe(85000 - 13850);
   });
 
@@ -81,13 +81,44 @@ describe('Row labels — @label: value syntax (§3.5)', () => {
 | Item | Value |
 |------|-------|
 | @rate | 1.5 |
-| Result | =@rate.Value * 100 |
+| Result | =@rate * 100 |
     `.trim();
 
     const result = calcmd(md);
-    expect(result.rows[0].label).toBe('rate');
+    expect(result.rows[0].cells[0].label).toBe('rate');
     expect(result.rows[0].cells[0].value).toBe('@rate'); // shorthand keeps string
+    // @rate resolves to the labeled cell (Item column), which is the string '@rate'
+    // so @rate * 100 should error (string * number)
+    expect(result.rows[1].cells[1].error).toBeDefined();
+  });
+
+  test('Bare @label with numeric value', () => {
+    const md = `
+| Item | Value |
+|------|-------|
+| Rate | @rate: 1.5 |
+| Result | =@rate * 100 |
+    `.trim();
+
+    const result = calcmd(md);
+    expect(result.rows[0].cells[1].label).toBe('rate');
+    expect(result.rows[0].cells[1].value).toBe(1.5);
     expect(result.rows[1].cells[1].computed).toBe(150);
+  });
+
+  test('Multiple labels in same row', () => {
+    const md = `
+| Q1 | Q2 | Total=Q1+Q2 |
+|----|----|----|
+| @r1: 5000 | @r2: 6000 | |
+| @c1: 3000 | @c2: 3500 | |
+| | | =(@r1+@r2) - (@c1+@c2) |
+    `.trim();
+
+    const result = calcmd(md);
+    expect(result.rows[0].cells[0].label).toBe('r1');
+    expect(result.rows[0].cells[1].label).toBe('r2');
+    expect(result.rows[2].cells[2].computed).toBe((5000 + 6000) - (3000 + 3500));
   });
 
   test('Duplicate label error', () => {
@@ -117,13 +148,13 @@ describe('Column aliases — #alias (§2.5)', () => {
     expect(result.rows[0].cells[2].computed).toBe(85000 * 0.22);
   });
 
-  test('Alias in label reference', () => {
+  test('Alias in cell label reference', () => {
     const md = `
 | Line | Description | Adjusted Gross Income #agi |
 |------|-------------|----------------------------|
-| 1 | @wages: Gross | 85000 |
-| 2 | @ded: Deductions | 13850 |
-| 3 | Taxable | =@wages.agi - @ded.agi |
+| 1 | Gross | @wages: 85000 |
+| 2 | Deductions | @ded: 13850 |
+| 3 | Taxable | =@wages - @ded |
     `.trim();
 
     const result = calcmd(md);
@@ -161,13 +192,14 @@ describe('Dependency graph & topological sort (§5.1-5.3)', () => {
 | Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
 | Widget | 10 | 5 | |
-| @gd: Gadget | 3 | 20 | |
-| Half | | | =@gd.Total / 2 |
+| Gadget | 3 | 20 | @gd: |
+| Half | | | =@gd / 2 |
     `.trim();
 
     const result = calcmd(md);
     expect(result.rows[0].cells[3].computed).toBe(50);
     expect(result.rows[1].cells[3].computed).toBe(60);
+    expect(result.rows[1].cells[3].label).toBe('gd');
     expect(result.rows[2].cells[3].computed).toBe(30);
   });
 });

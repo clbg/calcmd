@@ -142,12 +142,9 @@ export class Evaluator {
         break;
       }
       case 'label': {
-        if (expr.column) {
-          const ri = table.labels.get(expr.label);
-          const ci = resolveCol(expr.column);
-          if (ri !== undefined && ci !== undefined) {
-            edges.get(fromId)!.add(this.cellId(ri, ci));
-          }
+        const loc = table.labels.get(expr.label);
+        if (loc !== undefined) {
+          edges.get(fromId)!.add(this.cellId(loc.row, loc.col));
         }
         break;
       }
@@ -307,7 +304,7 @@ export class Evaluator {
       case 'column':
         return this.evaluateColumnRef(expr.name, ctx);
       case 'label':
-        return this.evaluateLabelRef(expr.label, expr.column, ctx);
+        return this.evaluateLabelRef(expr.label, undefined, ctx);
       case 'binary':
         return this.evaluateBinary(expr, ctx);
       case 'unary':
@@ -374,28 +371,15 @@ export class Evaluator {
   // @wages         → last numeric value in the row labeled 'wages'
   private evaluateLabelRef(
     label: string,
-    columnName: string | undefined,
+    _columnName: string | undefined,
     ctx: EvaluationContext,
   ): CellValue {
-    const rowIndex = ctx.labels.get(label);
-    if (rowIndex === undefined) throw new Error(`Label '@${label}' not found`);
+    const loc = ctx.labels.get(label);
+    if (loc === undefined) throw new Error(`Label '@${label}' not found`);
 
-    const row = ctx.table.rows[rowIndex];
-
-    if (columnName) {
-      const { index } = this.resolveColumnIndex(columnName, ctx);
-      const cell = row.cells[index];
-      return cell.computed !== undefined ? cell.computed : cell.value;
-    }
-
-    // Bare @label — scan right-to-left for first numeric value
-    for (let i = row.cells.length - 1; i >= 0; i--) {
-      const cell = row.cells[i];
-      const value = cell.computed !== undefined ? cell.computed : cell.value;
-      if (typeof value === 'number') return value;
-    }
-
-    throw new Error(`No numeric value found in row '@${label}'`);
+    const row = ctx.table.rows[loc.row];
+    const cell = row.cells[loc.col];
+    return cell.computed !== undefined ? cell.computed : cell.value;
   }
 
   // Evaluate binary operators with strict type checking (spec S-01, S-02).

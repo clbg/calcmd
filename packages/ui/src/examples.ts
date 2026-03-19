@@ -32,15 +32,15 @@ export const EXAMPLES = [
 | **Total** | **=sum(Q1)** | **=sum(Q2)** | **=sum(Q3)** | **=sum(Q4)** | **=sum(Total)** |`
   },
   {
-    name: 'Label Reference',
-    markdown: `| Description | Amount |
-|-------------|--------|
-| Item A | 100 |
-| Item B | 200 |
-| @subtotal | **=sum(Amount)** |
-| Tax_Rate | 0.1 |
-| Tax | =@subtotal*Tax_Rate |
-| @total | =@subtotal+Tax |`
+    name: 'Invoice with Cell Labels',
+    markdown: `| Item | Price | Quantity | Subtotal=Price*Quantity | Summary |
+|------|-------|----------|-------------------------|---------|
+| Laptop | 999 | 2 | | |
+| Mouse | 25 | 5 | | |
+| Cable | 12 | 10 | | |
+| **Subtotal** | | | | **@sub: =sum(Subtotal)** |
+| **Tax (10%)** | | | | **@tax: =round(@sub*0.1,2)** |
+| **Total** | | | | **=@sub+@tax** |`
   },
   {
     name: 'Grade Calculation',

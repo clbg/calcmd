@@ -23,10 +23,14 @@ export type CellValue = number | string | boolean | null;
 // Example — plain cell "Apple":
 //   { value: 'Apple' }
 //
+// Example — labeled cell "@wages: 85000":
+//   { value: 85000, label: 'wages' }
+//
 // Example — cell with a runtime error:
 //   { value: null, formula: 'Qty/0', effectiveFormula: 'Qty/0', error: 'Division by zero' }
 export interface Cell {
   value: CellValue;
+  label?: string; // Cell label from @label: value syntax
   formula?: string; // Formula written directly in this cell, e.g. "sum(Total)"
   effectiveFormula?: string; // Resolved formula after expansion: cell formula ?? column formula
   computed?: CellValue; // Result after evaluation (undefined until Evaluator runs)
@@ -47,26 +51,25 @@ export interface Column {
 
 // A data row in the table.
 //
-// Example — row "| @wages: Gross Income | 85000 |":
-//   { label: 'wages', cells: [{ value: 'Gross Income' }, { value: 85000 }] }
+// Example — row "| Gross Income | @wages: 85000 |":
+//   { cells: [{ value: 'Gross Income' }, { value: 85000, label: 'wages' }] }
 export interface Row {
-  label?: string; // Optional @label for cross-row references
   cells: Cell[];
 }
 
 // The full parsed table structure produced by the Parser.
 //
-// Example — after parsing a 3-column, 2-row table:
+// Example — after parsing a 3-column, 2-row table with a cell label:
 //   {
 //     columns: [{ name: 'Item' }, { name: 'Qty' }, { name: 'Total', formula: 'Qty*Price' }],
 //     rows:    [{ cells: [{value:'Apple'}, {value:3}, {value:4.5}] }],
-//     labels:  Map { 'wages' → 0 },   // row index by label name
+//     labels:  Map { 'wages' → { row: 0, col: 2 } },   // cell location by label name
 //     aliases: Map { 'agi' → 'Adjusted Gross Income' }
 //   }
 export interface Table {
   columns: Column[];
   rows: Row[];
-  labels: Map<string, number>; // @label name → row index
+  labels: Map<string, { row: number; col: number }>; // @label name → cell location
   aliases: Map<string, string>; // alias → column display name
 }
 
@@ -117,7 +120,7 @@ export interface EvaluationContext {
   table: Table;
   columns: Map<string, Column>; // name → Column (includes underscore-normalized names)
   aliases: Map<string, string>; // alias → column name
-  labels: Map<string, number>; // @label → row index
+  labels: Map<string, { row: number; col: number }>; // @label → cell location
 }
 
 // --- Expression AST ---
@@ -159,13 +162,11 @@ export interface ColumnRefExpression {
   name: string;
 }
 
-// A reference to a labeled row, optionally scoped to a column.
-// Example: "@wages"        → last numeric value in the 'wages' row
-// Example: "@wages.Amount" → Amount cell in the 'wages' row
+// A reference to a labeled cell.
+// Example: "@wages" → reads the value of the cell labeled 'wages'
 export interface LabelRefExpression {
   type: 'label';
   label: string;
-  column?: string;
 }
 
 // A binary operation between two expressions.

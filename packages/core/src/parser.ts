@@ -70,35 +70,26 @@ export class Parser {
 
     const table: Table = { columns, rows, labels: new Map(), aliases };
 
-    // Identify row labels: scan all cells for @label: value pattern
-    rows.forEach((row, index) => {
+    // Identify cell labels: scan all cells for @label: value pattern
+    rows.forEach((row, rowIndex) => {
       for (let c = 0; c < row.cells.length; c++) {
         const cell = row.cells[c];
         if (cell.value && typeof cell.value === 'string') {
           const labelMatch = this.extractLabel(cell.value);
           if (labelMatch) {
-            if (row.label !== undefined) {
-              this.addError(
-                'parse',
-                index,
-                columns[c]?.name,
-                `Row ${index} has multiple labels: '@${row.label}' and '@${labelMatch.label}'`,
-              );
-              break;
-            }
-            row.label = labelMatch.label;
+            cell.label = labelMatch.label;
             // Replace cell value with the actual value after label
             cell.value = this.parseValue(labelMatch.value);
 
             if (table.labels.has(labelMatch.label)) {
               this.addError(
                 'parse',
-                index,
+                rowIndex,
                 columns[c]?.name,
                 `Duplicate label '@${labelMatch.label}'`,
               );
             } else {
-              table.labels.set(labelMatch.label, index);
+              table.labels.set(labelMatch.label, { row: rowIndex, col: c });
             }
           }
         }
@@ -115,18 +106,20 @@ export class Parser {
   // Extract @label metadata from a cell string.
   //
   // "@wages: Gross Income"  → { label: 'wages', value: 'Gross Income' }
+  // "@gd:"                  → { label: 'gd',    value: '' }  (label with empty value)
+  // "@gd: "                 → { label: 'gd',    value: '' }  (label with empty value)
   // "@rate"                 → { label: 'rate',  value: '@rate' }  (bare label — cell keeps original string)
   // "Apple"                 → null (not a label)
   private extractLabel(raw: string): { label: string; value: string } | null {
     const trimmed = raw.trim();
     if (!trimmed.startsWith('@')) return null;
 
-    // @label: value (colon + space)
-    const colonIdx = trimmed.indexOf(': ');
+    // @label: value (colon + space) or @label: (colon at end)
+    const colonIdx = trimmed.indexOf(':');
     if (colonIdx > 1) {
       const label = trimmed.slice(1, colonIdx).trim();
-      const value = trimmed.slice(colonIdx + 2).trim();
       if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(label)) {
+        const value = trimmed.slice(colonIdx + 1).trim();
         return { label, value };
       }
     }

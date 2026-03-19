@@ -111,7 +111,7 @@ export class FormulaParser {
       // Identifiers (column names, function names, keywords)
       if (/[a-zA-Z_@]/.test(char)) {
         let ident = '';
-        while (i < formula.length && /[a-zA-Z0-9_@.]/.test(formula[i])) {
+        while (i < formula.length && /[a-zA-Z0-9_@]/.test(formula[i])) {
           ident += formula[i];
           i++;
         }
@@ -257,14 +257,9 @@ export class FormulaParser {
         return { type: 'function', name, args };
       }
 
-      // Label reference (@label or @label.Column)
+      // Label reference (@label — cell label, no .Column syntax)
       if (name.startsWith('@')) {
-        const parts = name.split('.');
-        if (parts.length === 1) {
-          return { type: 'label', label: name.slice(1) };
-        } else {
-          return { type: 'label', label: parts[0].slice(1), column: parts[1] };
-        }
+        return { type: 'label', label: name.slice(1) };
       }
 
       // Column reference

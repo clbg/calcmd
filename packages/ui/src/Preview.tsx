@@ -40,8 +40,8 @@ const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) =
       classes.push('selected');
     }
     
-    // Row label
-    if (table.rows[rowIndex].label) {
+    // Row with labeled cell
+    if (table.rows[rowIndex].cells.some(c => c.label)) {
       classes.push('label-row');
     }
     
