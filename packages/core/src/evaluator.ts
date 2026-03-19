@@ -1,6 +1,19 @@
 // Formula Evaluator — spec v0.1.4 aligned
-// Cell formula overrides column formula, cell-granularity DAG,
-// topological sort, cycle detection, strict type checking.
+//
+// Responsibility: take a ParsedTable (from Parser, no computed values yet) and
+// fill in cell.computed for every cell that has an effectiveFormula.
+//
+// Pipeline (4 phases):
+//   Phase 1 — expand:   assign effectiveFormula per cell (cell formula beats column formula)
+//   Phase 2+3 — graph:  build a dependency DAG + topological sort
+//   Phase 4 — compute:  walk the topo order, evaluate each cell's AST
+//
+// Example — given this table after parsing:
+//   columns: [Qty, Price, Total(formula='Qty*Price')]
+//   rows:    [{ cells: [{value:3}, {value:1.5}, {value:4.5}] }]
+//
+// After evaluate():
+//   rows:    [{ cells: [{value:3}, {value:1.5}, {value:4.5, computed:4.5}] }]
 
 import {
   Expression,
@@ -10,7 +23,7 @@ import {
   ParsedTable,
   ValidationError,
   DependencyGraph,
-  CellNode
+  CellNode,
 } from './types';
 import { FormulaParser } from './formula-parser';
 
@@ -18,31 +31,32 @@ export class Evaluator {
   private parser = new FormulaParser();
   private errors: ValidationError[] = [];
 
+  // Main entry point.
+  // Input:  ParsedTable from Parser (cell.computed is undefined everywhere)
+  // Output: same ParsedTable with cell.computed filled in and errors appended
   evaluate(table: ParsedTable): ParsedTable {
     this.errors = [];
-
-    // Phase 1: Expand — assign effectiveFormula per cell
     this.expand(table);
-
-    // Phase 2+3: Build dependency graph + topological sort
     const graph = this.buildDependencyGraph(table);
-
-    // Phase 4: Evaluate in topological order
     this.computeInOrder(table, graph);
-
     return {
       ...table,
       dependencies: graph,
-      errors: [...table.errors, ...this.errors]
+      errors: [...table.errors, ...this.errors],
     };
   }
 
-  // --- Phase 1: Expand column formulas into cells ---
+  // Phase 1: for every cell, decide which formula is active.
+  // Cell's own formula wins over the column-level formula (spec §2.3C).
+  //
+  // Example:
+  //   column formula: 'Qty*Price'
+  //   row 0 cell: { formula: undefined }  → effectiveFormula = 'Qty*Price'  (column wins)
+  //   row 2 cell: { formula: 'sum(Total)' } → effectiveFormula = 'sum(Total)' (cell wins)
   private expand(table: ParsedTable): void {
-    table.rows.forEach(row => {
+    table.rows.forEach((row) => {
       table.columns.forEach((col, colIdx) => {
         const cell = row.cells[colIdx];
-        // Cell formula overrides column formula (spec §2.3C)
         if (cell.formula) {
           cell.effectiveFormula = cell.formula;
         } else if (col.formula) {
@@ -52,39 +66,33 @@ export class Evaluator {
     });
   }
 
-  // --- Phase 2+3: Dependency graph + topological sort ---
+  // Stable cell identifier used as graph node key.
+  // Example: row 0, col 2  →  "R0.C2"
   private cellId(row: number, col: number): string {
     return `R${row}.C${col}`;
   }
 
+  // Phase 2+3: build a directed acyclic graph (DAG) of cell dependencies,
+  // then topologically sort it so we evaluate dependencies before dependents.
+  //
+  // Example — formula 'Qty*Price' in cell R0.C2:
+  //   nodes: { 'R0.C2': { id:'R0.C2', row:0, col:2, formula:'Qty*Price' } }
+  //   edges: { 'R0.C2': Set { 'R0.C0', 'R0.C1' } }   (depends on Qty and Price)
+  //   order: ['R0.C0', 'R0.C1', 'R0.C2']              (dependencies first)
   private buildDependencyGraph(table: ParsedTable): DependencyGraph {
     const nodes = new Map<string, CellNode>();
     const edges = new Map<string, Set<string>>();
 
-    const colNameToIdx = new Map<string, number>();
     const colLower = new Map<string, number>();
     table.columns.forEach((col, idx) => {
-      colNameToIdx.set(col.name, idx);
       colLower.set(col.name.toLowerCase(), idx);
-      if (col.alias) {
-        colLower.set(col.alias.toLowerCase(), idx);
-      }
-    });
-    // Also map underscore-normalized names
-    table.columns.forEach((col, idx) => {
+      if (col.alias) colLower.set(col.alias.toLowerCase(), idx);
       const normalized = col.name.replace(/\s+/g, '_').toLowerCase();
       if (!colLower.has(normalized)) colLower.set(normalized, idx);
     });
 
-    const resolveCol = (name: string): number | undefined => {
-      const lower = name.toLowerCase();
-      // Check direct name / normalized / alias
-      const idx = colLower.get(lower);
-      if (idx !== undefined) return idx;
-      return undefined;
-    };
+    const resolveCol = (name: string): number | undefined => colLower.get(name.toLowerCase());
 
-    // Collect dependencies for each cell with a formula
     table.rows.forEach((row, rowIdx) => {
       table.columns.forEach((col, colIdx) => {
         const cell = row.cells[colIdx];
@@ -94,26 +102,35 @@ export class Evaluator {
         nodes.set(id, { id, row: rowIdx, col: colIdx, formula: cell.effectiveFormula });
         if (!edges.has(id)) edges.set(id, new Set());
 
-        // Parse formula to find dependencies
         try {
           const ast = this.parser.parse(cell.effectiveFormula);
           this.collectDeps(ast, rowIdx, colIdx, table, resolveCol, id, edges);
         } catch {
-          // Parse errors handled later during evaluation
+          // Parse errors are surfaced later during evaluation
         }
       });
     });
 
-    // Topological sort with cycle detection
     const order = this.topoSort(nodes, edges);
-
     return { nodes, edges, order };
   }
 
+  // Walk an Expression AST and record which other cells this cell depends on.
+  //
+  // Example — AST for 'Qty*Price' in row 1, col 2:
+  //   ColumnRef('Qty')   → adds edge R1.C2 → R1.C0
+  //   ColumnRef('Price') → adds edge R1.C2 → R1.C1
+  //
+  // Aggregation special case — 'sum(Amount)' in row 3 (the totals row):
+  //   depends on Amount in ALL other rows → adds edges R3.C1 → R0.C1, R1.C1, R2.C1
   private collectDeps(
-    expr: Expression, rowIdx: number, colIdx: number,
-    table: ParsedTable, resolveCol: (name: string) => number | undefined,
-    fromId: string, edges: Map<string, Set<string>>
+    expr: Expression,
+    rowIdx: number,
+    colIdx: number,
+    table: ParsedTable,
+    resolveCol: (name: string) => number | undefined,
+    fromId: string,
+    edges: Map<string, Set<string>>,
   ): void {
     switch (expr.type) {
       case 'column': {
@@ -137,18 +154,21 @@ export class Evaluator {
       case 'function': {
         const lowerName = expr.name.toLowerCase();
         const aggFns = ['sum', 'avg', 'average', 'count', 'min', 'max'];
-        if (aggFns.includes(lowerName) && expr.args.length === 1 && expr.args[0].type === 'column') {
-          // Aggregation: depends on all rows in that column except current
+        if (
+          aggFns.includes(lowerName) &&
+          expr.args.length === 1 &&
+          expr.args[0].type === 'column'
+        ) {
           const ci = resolveCol(expr.args[0].name);
           if (ci !== undefined) {
             table.rows.forEach((_, ri) => {
-              if (ri !== rowIdx) {
-                edges.get(fromId)!.add(this.cellId(ri, ci));
-              }
+              if (ri !== rowIdx) edges.get(fromId)!.add(this.cellId(ri, ci));
             });
           }
         } else {
-          expr.args.forEach(a => this.collectDeps(a, rowIdx, colIdx, table, resolveCol, fromId, edges));
+          expr.args.forEach((a) =>
+            this.collectDeps(a, rowIdx, colIdx, table, resolveCol, fromId, edges),
+          );
         }
         break;
       }
@@ -165,10 +185,16 @@ export class Evaluator {
     }
   }
 
-  private topoSort(
-    nodes: Map<string, CellNode>,
-    edges: Map<string, Set<string>>
-  ): string[] {
+  // Topological sort via DFS. Also detects cycles.
+  //
+  // Example — edges: { A→B, B→C }
+  //   visit(A) → recurse into B → recurse into C → push C, push B, push A
+  //   order: ['C', 'B', 'A']  (dependencies come first)
+  //
+  // Cycle example — edges: { A→B, B→A }
+  //   visit(A) → recurse into B → B sees A already in stack → cycle detected
+  //   both A and B are excluded from order and marked as errors
+  private topoSort(nodes: Map<string, CellNode>, edges: Map<string, Set<string>>): string[] {
     const visited = new Set<string>();
     const inStack = new Set<string>();
     const order: string[] = [];
@@ -176,10 +202,9 @@ export class Evaluator {
 
     const visit = (id: string, path: string[]): boolean => {
       if (inStack.has(id)) {
-        // Cycle detected — mark all nodes in the cycle
         const cycleStart = path.indexOf(id);
         const cycle = path.slice(cycleStart);
-        cycle.forEach(n => cycleNodes.add(n));
+        cycle.forEach((n) => cycleNodes.add(n));
         cycleNodes.add(id);
         const cyclePath = [...cycle, id].join(' → ');
         this.addError('runtime', undefined, undefined, `Circular dependency: ${cyclePath}`);
@@ -193,7 +218,6 @@ export class Evaluator {
       const deps = edges.get(id);
       if (deps) {
         for (const dep of deps) {
-          // Only visit deps that are formula nodes
           if (nodes.has(dep) || edges.has(dep)) {
             visit(dep, [...path, id]);
           }
@@ -206,21 +230,17 @@ export class Evaluator {
     };
 
     for (const id of nodes.keys()) {
-      if (!visited.has(id)) {
-        visit(id, []);
-      }
+      if (!visited.has(id)) visit(id, []);
     }
 
-    // Mark cycle cells with errors — done in computeInOrder
-    // Filter out cycle nodes from order
-    return order.filter(id => !cycleNodes.has(id));
+    return order.filter((id) => !cycleNodes.has(id));
   }
 
-  // --- Phase 4: Compute in topological order ---
+  // Phase 4: evaluate each cell in topological order (dependencies first).
+  // Cells excluded from order (cycles) are marked with error = 'Circular dependency'.
   private computeInOrder(table: ParsedTable, graph: DependencyGraph): void {
     const ctx = this.makeBaseContext(table);
 
-    // First evaluate cells in topological order
     for (const id of graph.order) {
       const node = graph.nodes.get(id);
       if (!node || !node.formula) continue;
@@ -237,7 +257,7 @@ export class Evaluator {
           table,
           columns: ctx.columns,
           aliases: ctx.aliases,
-          labels: table.labels
+          labels: table.labels,
         };
         cell.computed = this.evaluateExpression(ast, evalCtx);
       } catch (error) {
@@ -246,7 +266,7 @@ export class Evaluator {
       }
     }
 
-    // Mark cells in cycles as errors
+    // Any node not in order was part of a cycle
     for (const [id, node] of graph.nodes) {
       if (!graph.order.includes(id)) {
         const cell = table.rows[node.row]?.cells[node.col];
@@ -258,26 +278,28 @@ export class Evaluator {
     }
   }
 
+  // Build lookup maps used during expression evaluation.
+  // columns: 'Total' → Column object (also maps underscore-normalized names)
+  // aliases: 'agi'   → 'Adjusted Gross Income'
   private makeBaseContext(table: ParsedTable) {
     const columns = new Map<string, Column>();
     const aliases = new Map<string, string>();
 
-    table.columns.forEach(col => {
+    table.columns.forEach((col) => {
       columns.set(col.name, col);
-      if (col.alias) {
-        aliases.set(col.alias.toLowerCase(), col.name);
-      }
-      // Also map underscore-normalized name
+      if (col.alias) aliases.set(col.alias.toLowerCase(), col.name);
       const normalized = col.name.replace(/\s+/g, '_');
-      if (normalized !== col.name) {
-        columns.set(normalized, col);
-      }
+      if (normalized !== col.name) columns.set(normalized, col);
     });
 
     return { columns, aliases };
   }
 
-  // --- Expression evaluation ---
+  // Recursively evaluate an Expression node given the current row context.
+  //
+  // { type: 'literal', value: 42 }          → 42
+  // { type: 'column',  name: 'Qty' }        → value of Qty in current row
+  // { type: 'binary',  operator: '+', ... } → left + right
   private evaluateExpression(expr: Expression, ctx: EvaluationContext): CellValue {
     switch (expr.type) {
       case 'literal':
@@ -299,52 +321,64 @@ export class Evaluator {
     }
   }
 
-  private resolveColumnIndex(name: string, ctx: EvaluationContext): { column: Column; index: number } {
+  // Resolve a column name (or alias) to its Column + index in the table.
+  // Lookup order: alias → exact name → underscore-normalized name
+  //
+  // 'agi'                    → resolves via alias → { column: <AGI col>, index: 0 }
+  // 'Adjusted_Gross_Income'  → resolves via normalization → same result
+  private resolveColumnIndex(
+    name: string,
+    ctx: EvaluationContext,
+  ): { column: Column; index: number } {
     const lowerName = name.toLowerCase();
-
-    // Check alias first
     const aliasTarget = ctx.aliases.get(lowerName);
-
-    // Build a reliable index: use the table's column array order
     const tableColumns = ctx.table.columns;
 
     const findByName = (searchName: string): { column: Column; index: number } | null => {
       const lower = searchName.toLowerCase();
       for (let i = 0; i < tableColumns.length; i++) {
         const col = tableColumns[i];
-        if (col.name.toLowerCase() === lower ||
-            col.name.replace(/\s+/g, '_').toLowerCase() === lower ||
-            (col.alias && col.alias.toLowerCase() === lower)) {
+        if (
+          col.name.toLowerCase() === lower ||
+          col.name.replace(/\s+/g, '_').toLowerCase() === lower ||
+          (col.alias && col.alias.toLowerCase() === lower)
+        ) {
           return { column: col, index: i };
         }
       }
       return null;
     };
 
-    // If alias resolved, find by the target column name
     if (aliasTarget) {
       const result = findByName(aliasTarget);
       if (result) return result;
     }
 
-    // Direct name / underscore-normalized / alias match
     const result = findByName(name);
     if (result) return result;
 
     throw new Error(`Column '${name}' not found`);
   }
 
+  // Read the value of a column in the current row.
+  // Prefers cell.computed (already evaluated) over cell.value (raw parsed value).
   private evaluateColumnRef(name: string, ctx: EvaluationContext): CellValue {
     const { index } = this.resolveColumnIndex(name, ctx);
     const cell = ctx.currentRow.cells[index];
     return cell.computed !== undefined ? cell.computed : cell.value;
   }
 
-  private evaluateLabelRef(label: string, columnName: string | undefined, ctx: EvaluationContext): CellValue {
+  // Read a value from a labeled row.
+  //
+  // @wages.Amount  → value of Amount column in the row labeled 'wages'
+  // @wages         → last numeric value in the row labeled 'wages'
+  private evaluateLabelRef(
+    label: string,
+    columnName: string | undefined,
+    ctx: EvaluationContext,
+  ): CellValue {
     const rowIndex = ctx.labels.get(label);
-    if (rowIndex === undefined) {
-      throw new Error(`Label '@${label}' not found`);
-    }
+    if (rowIndex === undefined) throw new Error(`Label '@${label}' not found`);
 
     const row = ctx.table.rows[rowIndex];
 
@@ -354,7 +388,7 @@ export class Evaluator {
       return cell.computed !== undefined ? cell.computed : cell.value;
     }
 
-    // Bare @label — last numeric value (implementation-defined)
+    // Bare @label — scan right-to-left for first numeric value
     for (let i = row.cells.length - 1; i >= 0; i--) {
       const cell = row.cells[i];
       const value = cell.computed !== undefined ? cell.computed : cell.value;
@@ -364,12 +398,16 @@ export class Evaluator {
     throw new Error(`No numeric value found in row '@${label}'`);
   }
 
-  // --- Binary operators with strict type checking (S-01, S-02) ---
+  // Evaluate binary operators with strict type checking (spec S-01, S-02).
+  //
+  // number + number → number     ✓
+  // string + string → string     ✓  (concatenation)
+  // number + string → ERROR      ✗  no implicit coercion
+  // number > string → ERROR      ✗  comparison requires same type
   private evaluateBinary(expr: any, ctx: EvaluationContext): CellValue {
     const left = this.evaluateExpression(expr.left, ctx);
     const right = this.evaluateExpression(expr.right, ctx);
 
-    // Null handling
     if (left === null || right === null) {
       if (expr.operator === '==') return left === right;
       if (expr.operator === '!=') return left !== right;
@@ -377,36 +415,29 @@ export class Evaluator {
     }
 
     switch (expr.operator) {
-      // S-01: strict + operator
       case '+':
         if (typeof left === 'number' && typeof right === 'number') return left + right;
         if (typeof left === 'string' && typeof right === 'string') return left + right;
         throw new Error(`Cannot add ${typeof left} and ${typeof right}`);
-
       case '-':
         if (typeof left === 'number' && typeof right === 'number') return left - right;
         throw new Error(`Cannot subtract ${typeof left} and ${typeof right}`);
-
       case '*':
         if (typeof left === 'number' && typeof right === 'number') return left * right;
         throw new Error(`Cannot multiply ${typeof left} and ${typeof right}`);
-
       case '/':
         if (typeof left === 'number' && typeof right === 'number') {
           if (right === 0) throw new Error('Division by zero');
           return left / right;
         }
         throw new Error(`Cannot divide ${typeof left} by ${typeof right}`);
-
       case '%':
         if (typeof left === 'number' && typeof right === 'number') return left % right;
         throw new Error(`Cannot modulo ${typeof left} by ${typeof right}`);
-
-      // Equality: cross-type returns false/true, no error
-      case '==': return left === right;
-      case '!=': return left !== right;
-
-      // S-02: strict comparison — same type only
+      case '==':
+        return left === right;
+      case '!=':
+        return left !== right;
       case '>':
       case '<':
       case '>=':
@@ -415,20 +446,28 @@ export class Evaluator {
           throw new Error(`Cannot compare ${typeof left} with ${typeof right}`);
         }
         if (typeof left === 'number' && typeof right === 'number') {
-          return expr.operator === '>' ? left > right :
-                 expr.operator === '<' ? left < right :
-                 expr.operator === '>=' ? left >= right : left <= right;
+          return expr.operator === '>'
+            ? left > right
+            : expr.operator === '<'
+              ? left < right
+              : expr.operator === '>='
+                ? left >= right
+                : left <= right;
         }
         if (typeof left === 'string' && typeof right === 'string') {
-          return expr.operator === '>' ? left > right :
-                 expr.operator === '<' ? left < right :
-                 expr.operator === '>=' ? left >= right : left <= right;
+          return expr.operator === '>'
+            ? left > right
+            : expr.operator === '<'
+              ? left < right
+              : expr.operator === '>='
+                ? left >= right
+                : left <= right;
         }
         throw new Error(`Cannot compare ${typeof left} values with '${expr.operator}'`);
-
-      case 'and': return Boolean(left) && Boolean(right);
-      case 'or': return Boolean(left) || Boolean(right);
-
+      case 'and':
+        return Boolean(left) && Boolean(right);
+      case 'or':
+        return Boolean(left) || Boolean(right);
       default:
         throw new Error(`Unknown operator: ${expr.operator}`);
     }
@@ -447,29 +486,47 @@ export class Evaluator {
     }
   }
 
-  // --- Functions ---
+  // Dispatch to the appropriate built-in function implementation.
+  // Throws for any unknown function name (whitelist-only, spec security requirement).
   private evaluateFunction(name: string, args: Expression[], ctx: EvaluationContext): CellValue {
-    const lowerName = name.toLowerCase();
-    switch (lowerName) {
-      case 'sum': return this.funcSum(args, ctx);
-      case 'avg': case 'average': return this.funcAvg(args, ctx);
-      case 'count': return this.funcCount(args, ctx);
-      case 'min': return this.funcMin(args, ctx);
-      case 'max': return this.funcMax(args, ctx);
-      case 'round': return this.funcRound(args, ctx);
-      case 'abs': return this.funcAbs(args, ctx);
-      case 'floor': return this.funcFloor(args, ctx);
-      case 'ceil': return this.funcCeil(args, ctx);
-      case 'if': return this.funcIf(args, ctx);
-      default: throw new Error(`Unknown function: ${name}`);
+    switch (name.toLowerCase()) {
+      case 'sum':
+        return this.funcSum(args, ctx);
+      case 'avg':
+      case 'average':
+        return this.funcAvg(args, ctx);
+      case 'count':
+        return this.funcCount(args, ctx);
+      case 'min':
+        return this.funcMin(args, ctx);
+      case 'max':
+        return this.funcMax(args, ctx);
+      case 'round':
+        return this.funcRound(args, ctx);
+      case 'abs':
+        return this.funcAbs(args, ctx);
+      case 'floor':
+        return this.funcFloor(args, ctx);
+      case 'ceil':
+        return this.funcCeil(args, ctx);
+      case 'if':
+        return this.funcIf(args, ctx);
+      default:
+        throw new Error(`Unknown function: ${name}`);
     }
   }
 
+  // Get all values for a column, excluding the current row.
+  // Aggregation functions (sum, avg, etc.) call this so a totals row
+  // doesn't include itself in the calculation.
+  //
+  // Example — sum(Amount) in row 3 with rows [100, 200, 300, <totals>]:
+  //   returns [100, 200, 300]  (row 3 excluded)
   private getColumnValues(columnName: string, ctx: EvaluationContext): CellValue[] {
     const { index } = this.resolveColumnIndex(columnName, ctx);
     return ctx.table.rows
       .filter((_, i) => i !== ctx.rowIndex)
-      .map(row => {
+      .map((row) => {
         const cell = row.cells[index];
         return cell.computed !== undefined ? cell.computed : cell.value;
       });
@@ -486,7 +543,7 @@ export class Evaluator {
     if (args.length !== 1) throw new Error('AVG requires exactly 1 argument');
     if (args[0].type !== 'column') throw new Error('AVG argument must be a column name');
     const values = this.getColumnValues(args[0].name, ctx);
-    const nums = values.filter(v => typeof v === 'number') as number[];
+    const nums = values.filter((v) => typeof v === 'number') as number[];
     if (nums.length === 0) return 0;
     return nums.reduce((a, b) => a + b, 0) / nums.length;
   }
@@ -494,13 +551,15 @@ export class Evaluator {
   private funcCount(args: Expression[], ctx: EvaluationContext): number {
     if (args.length !== 1) throw new Error('COUNT requires exactly 1 argument');
     if (args[0].type !== 'column') throw new Error('COUNT argument must be a column name');
-    return this.getColumnValues(args[0].name, ctx).filter(v => v !== null).length;
+    return this.getColumnValues(args[0].name, ctx).filter((v) => v !== null).length;
   }
 
   private funcMin(args: Expression[], ctx: EvaluationContext): number {
     if (args.length !== 1) throw new Error('MIN requires exactly 1 argument');
     if (args[0].type !== 'column') throw new Error('MIN argument must be a column name');
-    const nums = this.getColumnValues(args[0].name, ctx).filter(v => typeof v === 'number') as number[];
+    const nums = this.getColumnValues(args[0].name, ctx).filter(
+      (v) => typeof v === 'number',
+    ) as number[];
     if (nums.length === 0) throw new Error('No numeric values in column');
     return Math.min(...nums);
   }
@@ -508,11 +567,16 @@ export class Evaluator {
   private funcMax(args: Expression[], ctx: EvaluationContext): number {
     if (args.length !== 1) throw new Error('MAX requires exactly 1 argument');
     if (args[0].type !== 'column') throw new Error('MAX argument must be a column name');
-    const nums = this.getColumnValues(args[0].name, ctx).filter(v => typeof v === 'number') as number[];
+    const nums = this.getColumnValues(args[0].name, ctx).filter(
+      (v) => typeof v === 'number',
+    ) as number[];
     if (nums.length === 0) throw new Error('No numeric values in column');
     return Math.max(...nums);
   }
 
+  // round(value, decimals?)
+  // round(3.456, 2) → 3.46
+  // round(3.7)      → 4   (defaults to 0 decimal places)
   private funcRound(args: Expression[], ctx: EvaluationContext): number {
     if (args.length < 1 || args.length > 2) throw new Error('ROUND requires 1 or 2 arguments');
     const value = this.evaluateExpression(args[0], ctx);
@@ -544,6 +608,8 @@ export class Evaluator {
     return Math.ceil(value);
   }
 
+  // if(condition, trueValue, falseValue)
+  // if(Score >= 90, 'A', 'B')  → 'A' when Score is 95, 'B' when Score is 80
   private funcIf(args: Expression[], ctx: EvaluationContext): CellValue {
     if (args.length !== 3) throw new Error('IF requires exactly 3 arguments');
     const condition = this.evaluateExpression(args[0], ctx);
@@ -552,11 +618,12 @@ export class Evaluator {
       : this.evaluateExpression(args[2], ctx);
   }
 
-  private getCell(row: number, col: number, table: ParsedTable) {
-    return table.rows[row]?.cells[col];
-  }
-
-  private addError(type: ValidationError['type'], row: number | undefined, column: string | undefined, message: string) {
+  private addError(
+    type: ValidationError['type'],
+    row: number | undefined,
+    column: string | undefined,
+    message: string,
+  ) {
     this.errors.push({ type, row, column, message });
   }
 }
