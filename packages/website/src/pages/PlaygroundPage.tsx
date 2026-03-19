@@ -3,14 +3,31 @@ import { calcmd, ParsedTable } from '@calcmd/core';
 import { Editor, Preview, EXAMPLES } from '@calcmd/ui';
 import '../playground.css';
 
+function getInitialMarkdown(): string {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('c');
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      // fall through to default
+    }
+  }
+  return EXAMPLES[0].markdown;
+}
+
 export default function PlaygroundPage() {
-  const [markdown, setMarkdown] = useState(EXAMPLES[0].markdown);
+  const [markdown, setMarkdown] = useState(getInitialMarkdown);
   const [result, setResult] = useState<ParsedTable | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = useCallback((value: string) => {
     setMarkdown(value);
+    // Keep URL in sync — share link always reflects current content
+    const params = new URLSearchParams();
+    params.set('c', encodeURIComponent(value));
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
     try {
       setResult(calcmd(value));
       setError(null);
@@ -99,7 +116,17 @@ export default function PlaygroundPage() {
             Editor
           </div>
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <Editor value={markdown} onChange={handleChange} parsedTable={result ?? undefined} />
+            <Editor
+              value={markdown}
+              onChange={handleChange}
+              parsedTable={result ?? undefined}
+              onShare={() =>
+                navigator.clipboard.writeText(window.location.href).then(
+                  () => true,
+                  () => false,
+                )
+              }
+            />
           </div>
         </div>
 
