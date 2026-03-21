@@ -1,18 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { calcmd, ParsedTable } from '@calcmd/core';
 import { Editor, Preview, EXAMPLES } from '@calcmd/ui';
+import { getMarkdownFromUrl, updateUrl } from '../utils/urlCompression';
 import '../playground.css';
 
 function getInitialMarkdown(): string {
-  const params = new URLSearchParams(window.location.search);
-  const encoded = params.get('c');
-  if (encoded) {
-    try {
-      return decodeURIComponent(encoded);
-    } catch {
-      // fall through to default
-    }
-  }
+  // Try to get from URL first
+  const fromUrl = getMarkdownFromUrl();
+  if (fromUrl) return fromUrl;
+
+  // Fall back to first example
   return EXAMPLES[0].markdown;
 }
 
@@ -25,10 +22,8 @@ export default function PlaygroundPage() {
 
   const handleChange = useCallback((value: string) => {
     setMarkdown(value);
-    // Keep URL in sync — share link always reflects current content
-    const params = new URLSearchParams();
-    params.set('c', encodeURIComponent(value));
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+    // Keep URL in sync — TypeScript Playground style
+    updateUrl(value);
     try {
       setResult(calcmd(value));
       setError(null);
