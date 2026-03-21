@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { calcmd, ParsedTable, formatValue } from '@calcmd/core';
+import { calcmd, ParsedTable } from '@calcmd/core';
+import { Preview } from '@calcmd/ui';
 
 const DEFAULT_MARKDOWN = `| Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
@@ -10,6 +11,7 @@ const DEFAULT_MARKDOWN = `| Item | Qty | Price | Total=Qty*Price |
 export default function LiveDemo() {
   const [input, setInput] = useState(DEFAULT_MARKDOWN);
   const [result, setResult] = useState<ParsedTable | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
 
   useEffect(() => {
     try {
@@ -19,21 +21,19 @@ export default function LiveDemo() {
     }
   }, [input]);
 
-  const tdStyle = (isFormula: boolean, isAgg: boolean): React.CSSProperties => ({
-    padding: '0.6rem 1rem',
-    textAlign: 'left',
-    borderBottom: '1px solid var(--border)',
-    whiteSpace: 'nowrap',
-    fontFamily: '"SF Mono", "Fira Code", monospace',
-    fontSize: '0.88rem',
-    background: isAgg ? '#1c2d1f' : isFormula ? 'var(--formula-bg)' : undefined,
-    color: isAgg ? 'var(--accent2)' : isFormula ? 'var(--accent)' : undefined,
-    borderLeft: isAgg
-      ? '2px solid var(--accent2)'
-      : isFormula
-        ? '2px solid var(--formula-border)'
-        : undefined,
-  });
+  const label = (text: string) => (
+    <div
+      style={{
+        fontSize: '0.75rem',
+        color: 'var(--muted)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        marginBottom: '0.5rem',
+      }}
+    >
+      {text}
+    </div>
+  );
 
   return (
     <section id="demo" style={{ maxWidth: 860, margin: '0 auto', padding: '3rem 2rem' }}>
@@ -52,17 +52,7 @@ export default function LiveDemo() {
       >
         {/* Editor */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: '0.5rem',
-            }}
-          >
-            Markdown input
-          </div>
+          {label('Markdown input')}
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -85,19 +75,9 @@ export default function LiveDemo() {
           />
         </div>
 
-        {/* Rendered table */}
+        {/* Preview */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: '0.5rem',
-            }}
-          >
-            Computed output
-          </div>
+          {label('Computed output')}
           {result ? (
             <div
               style={{
@@ -108,54 +88,11 @@ export default function LiveDemo() {
                 maxHeight: 240,
               }}
             >
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {result.columns.map((col, i) => (
-                      <th
-                        key={i}
-                        style={{
-                          padding: '0.6rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--border)',
-                          background: '#1c2128',
-                          fontWeight: 500,
-                          color: col.formula ? 'var(--accent)' : 'var(--muted)',
-                          fontFamily: '"SF Mono", "Fira Code", monospace',
-                          fontSize: '0.85rem',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {col.formula ? `${col.name}=${col.formula}` : col.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.rows.map((row, ri) => (
-                    <tr key={ri}>
-                      {row.cells.map((cell, ci) => {
-                        const isFormula = !!cell.formula;
-                        const isAgg = isFormula && /sum|avg|min|max|count/.test(cell.formula ?? '');
-                        const display = cell.error
-                          ? '#ERROR'
-                          : cell.computed !== undefined
-                            ? formatValue(cell.computed)
-                            : formatValue(cell.value ?? '');
-                        return (
-                          <td
-                            key={ci}
-                            style={tdStyle(isFormula && !isAgg, isAgg)}
-                            title={cell.formula ?? undefined}
-                          >
-                            {display}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Preview
+                table={result}
+                selectedCell={selectedCell}
+                onCellClick={(row, col) => setSelectedCell(row === -1 ? null : { row, col })}
+              />
             </div>
           ) : (
             <div style={{ color: 'var(--muted)', fontSize: '0.85rem', padding: '1rem' }}>
