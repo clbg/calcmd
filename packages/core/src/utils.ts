@@ -7,11 +7,8 @@ import type { ParsedTable, CellValue } from './types';
 
 // --- constants ---
 
-/** Significant digits used when displaying computed numbers in the Preview. */
+/** Significant digits used for all numeric output — display and fill. */
 export const DISPLAY_PRECISION = 6;
-
-/** Significant digits used when writing computed numbers back to markdown source (fill). */
-export const SOURCE_PRECISION = 15;
 
 // --- format ---
 
@@ -129,7 +126,7 @@ export function formatValue(v: CellValue): string {
 function formatValueForFill(v: CellValue): string {
   if (v === null) return '';
   if (typeof v === 'boolean') return v ? 'true' : 'false';
-  if (typeof v === 'number') return parseFloat(v.toPrecision(SOURCE_PRECISION)).toString();
+  if (typeof v === 'number') return parseFloat(v.toPrecision(DISPLAY_PRECISION)).toString();
   return String(v);
 }
 
