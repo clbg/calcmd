@@ -12,7 +12,11 @@ export default function LiveDemo() {
   const [result, setResult] = useState<ParsedTable | null>(null);
 
   useEffect(() => {
-    try { setResult(calcmd(input)); } catch { setResult(null); }
+    try {
+      setResult(calcmd(input));
+    } catch {
+      setResult(null);
+    }
   }, [input]);
 
   const tdStyle = (isFormula: boolean, isAgg: boolean): React.CSSProperties => ({
@@ -24,7 +28,11 @@ export default function LiveDemo() {
     fontSize: '0.88rem',
     background: isAgg ? '#1c2d1f' : isFormula ? 'var(--formula-bg)' : undefined,
     color: isAgg ? 'var(--accent2)' : isFormula ? 'var(--accent)' : undefined,
-    borderLeft: isAgg ? '2px solid var(--accent2)' : isFormula ? '2px solid var(--formula-border)' : undefined,
+    borderLeft: isAgg
+      ? '2px solid var(--accent2)'
+      : isFormula
+        ? '2px solid var(--formula-border)'
+        : undefined,
   });
 
   return (
@@ -34,47 +42,90 @@ export default function LiveDemo() {
         Edit the markdown below — the table updates in real time using <code>@calcmd/core</code>.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          alignItems: 'start',
+        }}
+      >
         {/* Editor */}
-        <div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '0.5rem',
+            }}
+          >
             Markdown input
           </div>
           <textarea
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             spellCheck={false}
             style={{
-              width: '100%', height: 180,
-              background: 'var(--surface)', color: 'var(--text)',
-              border: '1px solid var(--border)', borderRadius: 8,
+              width: '100%',
+              height: 240,
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
               padding: '0.75rem 1rem',
               fontFamily: '"SF Mono", "Fira Code", monospace',
-              fontSize: '0.82rem', lineHeight: 1.6,
-              resize: 'vertical', outline: 'none',
+              fontSize: '0.82rem',
+              lineHeight: 1.6,
+              resize: 'vertical',
+              outline: 'none',
+              overflowY: 'auto',
             }}
           />
         </div>
 
         {/* Rendered table */}
-        <div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '0.5rem',
+            }}
+          >
             Computed output
           </div>
           {result ? (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'auto' }}>
+            <div
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                overflow: 'auto',
+                maxHeight: 240,
+              }}
+            >
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     {result.columns.map((col, i) => (
-                      <th key={i} style={{
-                        padding: '0.6rem 1rem', textAlign: 'left',
-                        borderBottom: '1px solid var(--border)',
-                        background: '#1c2128', fontWeight: 500,
-                        color: col.formula ? 'var(--accent)' : 'var(--muted)',
-                        fontFamily: '"SF Mono", "Fira Code", monospace',
-                        fontSize: '0.85rem', whiteSpace: 'nowrap',
-                      }}>
+                      <th
+                        key={i}
+                        style={{
+                          padding: '0.6rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--border)',
+                          background: '#1c2128',
+                          fontWeight: 500,
+                          color: col.formula ? 'var(--accent)' : 'var(--muted)',
+                          fontFamily: '"SF Mono", "Fira Code", monospace',
+                          fontSize: '0.85rem',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {col.formula ? `${col.name}=${col.formula}` : col.name}
                       </th>
                     ))}
@@ -92,7 +143,11 @@ export default function LiveDemo() {
                             ? String(cell.computed)
                             : String(cell.value ?? '');
                         return (
-                          <td key={ci} style={tdStyle(isFormula && !isAgg, isAgg)} title={cell.formula ?? undefined}>
+                          <td
+                            key={ci}
+                            style={tdStyle(isFormula && !isAgg, isAgg)}
+                            title={cell.formula ?? undefined}
+                          >
                             {display}
                           </td>
                         );
@@ -109,7 +164,9 @@ export default function LiveDemo() {
           )}
           {result && result.errors.length > 0 && (
             <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#f85149' }}>
-              {result.errors.map((e, i) => <div key={i}>{e.message}</div>)}
+              {result.errors.map((e, i) => (
+                <div key={i}>{e.message}</div>
+              ))}
             </div>
           )}
         </div>
