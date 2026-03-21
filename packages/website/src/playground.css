@@ -109,6 +109,10 @@
 
 .cell-value { flex: 1; }
 
+.cell-value.bold {
+  font-weight: 600;
+}
+
 .cell-formula-indicator {
   color: var(--formula-color);
   font-weight: bold;

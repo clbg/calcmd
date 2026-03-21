@@ -197,13 +197,21 @@ export class Parser {
   // "Apple"          → { value: 'Apple' }                       plain value
   // "=Qty*Price"     → { value: null, formula: 'Qty*Price' }    formula only (no display value)
   // "4.5=Qty*Price"  → { value: 4.5,  formula: 'Qty*Price' }    display value + formula (for verification)
-  // "**4.5**"        → { value: 4.5 }                           markdown bold stripped before parsing
+  // "**4.5**"        → { value: 4.5, bold: true }               markdown bold stripped but tracked
   private parseCell(cellStr: string): Cell {
     let trimmed = cellStr.trim();
+    let bold = false;
 
-    // Remove Markdown formatting (bold, italic)
-    trimmed = trimmed.replace(/^\*\*(.*)\*\*$/, '$1');
-    trimmed = trimmed.replace(/^__(.*)__$/, '$1');
+    // Detect and remove Markdown bold formatting
+    if (/^\*\*(.*)\*\*$/.test(trimmed)) {
+      bold = true;
+      trimmed = trimmed.replace(/^\*\*(.*)\*\*$/, '$1');
+    } else if (/^__(.*)__$/.test(trimmed)) {
+      bold = true;
+      trimmed = trimmed.replace(/^__(.*)__$/, '$1');
+    }
+
+    // Remove italic formatting (only if not a formula)
     if (!trimmed.includes('=')) {
       trimmed = trimmed.replace(/^\*(.*)\*$/, '$1');
       trimmed = trimmed.replace(/^_(.*)_$/, '$1');
@@ -211,7 +219,7 @@ export class Parser {
     trimmed = trimmed.trim();
 
     if (!trimmed) {
-      return { value: null };
+      return { value: null, bold };
     }
 
     // Formula with display value: "3000=Qty*Price"
@@ -219,15 +227,15 @@ export class Parser {
     if (equalsIndex > 0) {
       const displayValue = trimmed.slice(0, equalsIndex).trim();
       const formula = trimmed.slice(equalsIndex + 1).trim();
-      return { value: this.parseValue(displayValue), formula };
+      return { value: this.parseValue(displayValue), formula, bold };
     }
 
     // Formula only: "=Qty*Price"
     if (trimmed.startsWith('=')) {
-      return { value: null, formula: trimmed.slice(1).trim() };
+      return { value: null, formula: trimmed.slice(1).trim(), bold };
     }
 
-    return { value: this.parseValue(trimmed) };
+    return { value: this.parseValue(trimmed), bold };
   }
 
   // Convert a raw string to its JS primitive type.

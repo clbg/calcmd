@@ -35,6 +35,7 @@ export interface Cell {
   effectiveFormula?: string; // Resolved formula after expansion: cell formula ?? column formula
   computed?: CellValue; // Result after evaluation (undefined until Evaluator runs)
   error?: string; // Runtime error message, if evaluation failed
+  bold?: boolean; // Whether the cell was marked with **bold** in markdown
 }
 
 // A column in the table, parsed from the header row.

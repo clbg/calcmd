@@ -129,6 +129,10 @@ export class CalcMDPreview extends LitElement {
       flex: 1;
     }
 
+    .cell-value.bold {
+      font-weight: 600;
+    }
+
     .cell-formula-indicator {
       color: var(--formula-color, #58a6ff);
       font-weight: bold;
@@ -319,7 +323,7 @@ export class CalcMDPreview extends LitElement {
                           ${cell.error
                             ? html`<span class="cell-error">#ERROR</span>`
                             : html`
-                                <span class="cell-value">
+                                <span class="cell-value ${cell.bold ? 'bold' : ''}">
                                   ${formatValue(
                                     cell.computed !== undefined ? cell.computed : cell.value,
                                   )}
