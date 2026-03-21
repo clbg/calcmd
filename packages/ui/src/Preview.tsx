@@ -1,26 +1,19 @@
 import React from 'react';
-import { ParsedTable, CellValue } from '@calcmd/core';
+import { ParsedTable, CellValue, formatValue } from '@calcmd/core';
 
 export interface PreviewProps {
   table: ParsedTable;
-  selectedCell: {row: number; col: number} | null;
+  selectedCell: { row: number; col: number } | null;
   onCellClick: (row: number, col: number) => void;
 }
 
 const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) => {
-  const formatValue = (value: CellValue): string => {
-    if (value === null) return '';
-    if (typeof value === 'boolean') return value ? 'true' : 'false';
-    if (typeof value === 'number') return value.toString();
-    return String(value);
-  };
-
   const getCellClass = (rowIndex: number, colIndex: number): string => {
     const classes = ['preview-cell'];
-    
+
     const cell = table.rows[rowIndex].cells[colIndex];
     const column = table.columns[colIndex];
-    
+
     // Has formula
     if (cell.formula || column.formula) {
       classes.push('has-formula');
@@ -29,31 +22,31 @@ const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) =
         classes.push('has-agg');
       }
     }
-    
+
     // Has error
     if (cell.error) {
       classes.push('has-error');
     }
-    
+
     // Selected
     if (selectedCell?.row === rowIndex && selectedCell?.col === colIndex) {
       classes.push('selected');
     }
-    
+
     // Row with labeled cell
-    if (table.rows[rowIndex].cells.some(c => c.label)) {
+    if (table.rows[rowIndex].cells.some((c) => c.label)) {
       classes.push('label-row');
     }
-    
+
     return classes.join(' ');
   };
 
   const getCellTitle = (rowIndex: number, colIndex: number): string => {
     const cell = table.rows[rowIndex].cells[colIndex];
     const column = table.columns[colIndex];
-    
+
     const parts: string[] = [];
-    
+
     if (column.formula) {
       parts.push(`Column formula: ${column.formula}`);
     }
@@ -66,7 +59,7 @@ const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) =
     if (cell.error) {
       parts.push(`Error: ${cell.error}`);
     }
-    
+
     return parts.join('\n');
   };
 
@@ -79,9 +72,7 @@ const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) =
               <th key={i} className="preview-header">
                 <div className="header-content">
                   <span className="header-name">{col.name}</span>
-                  {col.formula && (
-                    <span className="header-formula">= {col.formula}</span>
-                  )}
+                  {col.formula && <span className="header-formula">= {col.formula}</span>}
                 </div>
               </th>
             ))}
@@ -105,9 +96,7 @@ const Preview: React.FC<PreviewProps> = ({ table, selectedCell, onCellClick }) =
                         <span className="cell-value">
                           {formatValue(cell.computed !== undefined ? cell.computed : cell.value)}
                         </span>
-                        {cell.formula && (
-                          <span className="cell-formula-indicator">ƒ</span>
-                        )}
+                        {cell.formula && <span className="cell-formula-indicator">ƒ</span>}
                       </>
                     )}
                   </div>

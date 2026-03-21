@@ -104,9 +104,15 @@ export function format(markdown: string): string {
 
 // --- fill ---
 
-function formatValue(v: CellValue): string {
+/**
+ * Format a cell value for display or fill output.
+ * Numbers are rounded to 15 significant digits (matching Excel's display behaviour)
+ * to avoid surfacing IEEE 754 floating-point noise like 13.000000000000002.
+ */
+export function formatValue(v: CellValue): string {
   if (v === null) return '';
-  if (typeof v === 'number') return parseFloat(v.toPrecision(10)).toString();
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'number') return parseFloat(v.toPrecision(15)).toString();
   return String(v);
 }
 
