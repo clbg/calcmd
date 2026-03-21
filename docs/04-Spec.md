@@ -288,7 +288,23 @@ Function names are **case-insensitive**: `SUM()`, `Sum()`, and `sum()` are equiv
 | `max(col)` | Maximum value | `max(Amount)` | Numbers only |
 | `count(col)` | Count of non-empty values | `count(Item)` | All types; excludes null |
 
-**Aggregation Scope**: Aggregation functions operate on all rows in the table **excluding the row containing the formula itself**. This prevents self-referential calculations in summary rows.
+**Aggregation Scope**: The scope of aggregation functions depends on where the formula is used:
+
+1. **Cell Formula** (e.g., `| **350=sum(Amount)** |`):
+   - Aggregates from the **first row to the row before the current row**
+   - Example: A sum in row 5 aggregates rows 0-4
+   - Use case: Summary rows, subtotals, running totals
+
+2. **Column Formula** (e.g., `| Percentage=Count/sum(Count)*100 |`):
+   - Aggregates **all rows in the column** (including the current row)
+   - Each row sees the same total value
+   - Use case: Percentage calculations, ratios, normalization
+   - **Exception**: Self-reference (e.g., `Amount=sum(Amount)`) is forbidden and will produce a circular dependency error
+
+This design ensures:
+- Cell formulas can create summary rows without self-reference issues
+- Column formulas can use fixed totals for calculations like percentages
+- Behavior is predictable and matches user intuition for each use case
 
 #### Mathematical Functions
 
@@ -448,8 +464,10 @@ Cell values (not inside formulas) are parsed as:
 2. **Expand**: Expand column-header formulas into per-cell formulas. For each cell in a column with a header formula, if the cell does NOT have its own cell-level formula, assign the column formula as the cell's effective formula. Cells with their own formula are left unchanged (cell overrides column — see §2.3C).
 3. **Dependency Analysis**: Build a directed acyclic graph (DAG) at **cell granularity**. Each cell with a formula is a node. Edges represent dependencies:
    - Column reference in a row-level formula → edge to the referenced cell in the same row
-   - Aggregation function (`sum(Col)`, etc.) → edges to all cells in the referenced column (excluding the current row)
+   - Aggregation function in **cell formula** (`| **=sum(Col)** |`) → edges to all cells in the referenced column from row 0 to the row before the current row
+   - Aggregation function in **column formula** (`| Col=sum(OtherCol) |`) → edges to all cells in the referenced column (all rows)
    - Cell label reference (`@label`) → edge to the specific labeled cell
+   - **Circular dependency check**: Column formulas that reference their own column (e.g., `Amount=sum(Amount)`) are detected and reported as errors
 4. **Topological Sort**: Determine evaluation order from the DAG. Cells with no dependencies are evaluated first.
 5. **Compute**: Evaluate formulas in topological order
 6. **Validate**: If display values are present, compare with computed results
@@ -464,15 +482,26 @@ A column formula can reference other columns in the same row:
 After expansion, each row's `C` cell has formula `A+B`, with edges to `A` and `B` in the same row.
 
 #### Column-Level Dependencies (Aggregations)
-A cell formula can reference an entire column for aggregation:
+
+**Cell Formula Aggregation**: A cell formula aggregates from the first row to the row before itself:
 ```markdown
 | Amount |
 |--------|
-| 100    |
-| 200    |
-| **300=sum(Amount)** |
+| 100    |  ← Row 0
+| 200    |  ← Row 1
+| **300=sum(Amount)** |  ← Row 2: aggregates rows 0-1
 ```
-The `sum(Amount)` cell depends on all other `Amount` cells (excluding itself).
+The `sum(Amount)` in row 2 depends on `Amount` cells in rows 0 and 1.
+
+**Column Formula Aggregation**: A column formula aggregates all rows in the referenced column:
+```markdown
+| Count | Percentage=round(Count/sum(Count)*100,1) |
+|-------|------------------------------------------|
+| 45    | 45.0  ← sum(Count) = 100 (all rows)     |
+| 30    | 30.0  ← sum(Count) = 100 (all rows)     |
+| 25    | 25.0  ← sum(Count) = 100 (all rows)     |
+```
+Each `Percentage` cell depends on all `Count` cells (rows 0, 1, and 2).
 
 #### Cross-Column Dependencies
 A computed column can be referenced by another formula. Evaluation follows topological order:
@@ -495,7 +524,7 @@ A cell formula MAY override a column formula and aggregate computed values:
 After expansion:
 - Row 0, `Subtotal`: effective formula `Qty*Price` (from column)
 - Row 1, `Subtotal`: effective formula `Qty*Price` (from column)
-- Row 2, `Subtotal`: effective formula `sum(Subtotal)` (cell override)
+- Row 2, `Subtotal`: effective formula `sum(Subtotal)` (cell override) — aggregates rows 0-1
 
 The dependency graph ensures Row 0 and Row 1 `Subtotal` cells are evaluated before Row 2's `sum(Subtotal)`.
 
@@ -519,6 +548,12 @@ Circular dependencies are **forbidden**:
 ```
 
 **Detection**: Implementations MUST detect circular references during dependency analysis (Phase 3) by checking for cycles in the DAG. If a cycle is found:
+
+**Special Case - Column Self-Reference**: Column formulas that reference their own column are also circular:
+```markdown
+| Amount=sum(Amount) |  ← ERROR: Circular dependency
+```
+This is detected during dependency analysis and reported as an error.
 - All cells participating in the cycle are marked as errors
 - Error message MUST include the cycle path (e.g., `Circular dependency: R0.A → R0.B → R0.A`)
 - Non-circular cells continue evaluation normally
@@ -718,7 +753,7 @@ Implementations MUST NOT:
 
 ## 9. Examples
 
-### Example 1: Simple Calculation
+### Example 1: Simple Calculation with Cell Formula Aggregation
 ```markdown
 | Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
@@ -726,6 +761,8 @@ Implementations MUST NOT:
 | Banana | 5 | 0.80 | 4.00            |
 | **Total** | | | **8.50=sum(Total)** |
 ```
+
+**Aggregation behavior**: The `sum(Total)` in the last row is a **cell formula**, so it aggregates from row 0 to the row before itself (rows 0-1), producing 4.50 + 4.00 = 8.50. The summary row does not include itself in the calculation.
 
 ### Example 2: Conditional Logic
 ```markdown
@@ -736,7 +773,7 @@ Implementations MUST NOT:
 | Charlie | 68    | D                                                                |
 ```
 
-### Example 3: Multi-Step Calculation
+### Example 3: Multi-Step Calculation with Cell Formula Aggregation
 ```markdown
 | Product | Units | Price | Subtotal=Units*Price | Tax=round(Subtotal*0.1,2) | Total=Subtotal+Tax |
 |---------|-------|-------|----------------------|---------------------------|---------------------|
@@ -745,7 +782,9 @@ Implementations MUST NOT:
 | **Sum** |       |       | **2125=sum(Subtotal)** | **212.50=sum(Tax)** | **2337.50=sum(Total)** |
 ```
 
-### Example 4: Percentage Calculation
+**Aggregation behavior**: All three `sum()` formulas in the last row are **cell formulas**, so each aggregates only the rows above it (rows 0-1). The summary row does not include itself in any calculation.
+
+### Example 4: Percentage Calculation with Column Formula Aggregation
 ```markdown
 | Category | Count | Percentage=round(Count/sum(Count)*100,1) |
 |----------|-------|------------------------------------------|
@@ -755,7 +794,23 @@ Implementations MUST NOT:
 | **Total** | **100=sum(Count)** | **100.0=sum(Percentage)** |
 ```
 
-> **Note on Example 4**: The `Percentage` column formula uses `sum(Count)` as a divisor. Since this is a column-header formula, `sum(Count)` is evaluated per-row and excludes the current row. This means each row's percentage is calculated against the sum of all *other* rows' counts, which may produce unexpected results. Implementations should document this behavior clearly. A future version may introduce a `total(col)` function that includes all rows.
+**Aggregation behavior**: 
+- The `Percentage` column uses a **column formula** with `sum(Count)`. Since it's a column formula, `sum(Count)` aggregates **all rows** (0, 1, 2), giving each row the same total (100) to calculate against. This produces the expected percentage values: 45/100 = 45.0%, 30/100 = 30.0%, 25/100 = 25.0%.
+- The `Total` row uses **cell formulas** (`sum(Count)` and `sum(Percentage)`), which aggregate only rows 0-2 (the rows above them).
+
+### Example 5: Comparing Cell vs Column Formula Aggregation
+```markdown
+| Item | Amount | RunningTotal=sum(Amount) | PercentOfTotal=round(Amount/sum(Amount)*100,1) |
+|------|--------|--------------------------|------------------------------------------------|
+| A    | 100    | 100                      | 33.3                                           |
+| B    | 100    | 200                      | 33.3                                           |
+| C    | 100    | 300                      | 33.3                                           |
+```
+
+**Aggregation behavior**:
+- `RunningTotal` uses a **column formula** with `sum(Amount)`. Each row aggregates **all rows** (0, 1, 2), so every cell shows 300 (the grand total).
+- `PercentOfTotal` also uses a **column formula** with `sum(Amount)`. Each row divides its Amount by the same total (300), producing 100/300 = 33.3% for each row.
+- If we wanted a true running total (100, 200, 300), we would need to use **cell formulas** in each row instead of a column formula.
 
 ---
 

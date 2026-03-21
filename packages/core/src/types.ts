@@ -36,6 +36,7 @@ export interface Cell {
   computed?: CellValue; // Result after evaluation (undefined until Evaluator runs)
   error?: string; // Runtime error message, if evaluation failed
   bold?: boolean; // Whether the cell was marked with **bold** in markdown
+  isColumnFormula?: boolean; // True if effectiveFormula came from column header (set during expand)
 }
 
 // A column in the table, parsed from the header row.
@@ -118,6 +119,7 @@ export interface ValidationError {
 export interface EvaluationContext {
   currentRow: Row;
   rowIndex: number;
+  colIndex: number; // Current column index (needed to determine if formula is from column header)
   table: Table;
   columns: Map<string, Column>; // name → Column (includes underscore-normalized names)
   aliases: Map<string, string>; // alias → column name

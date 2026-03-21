@@ -59,8 +59,10 @@ export class Evaluator {
         const cell = row.cells[colIdx];
         if (cell.formula) {
           cell.effectiveFormula = cell.formula;
+          cell.isColumnFormula = false; // Cell formula
         } else if (col.formula) {
           cell.effectiveFormula = col.formula;
+          cell.isColumnFormula = true; // Column formula
         }
       });
     });
@@ -158,9 +160,30 @@ export class Evaluator {
         ) {
           const ci = resolveCol(expr.args[0].name);
           if (ci !== undefined) {
-            table.rows.forEach((_, ri) => {
-              if (ri !== rowIdx) edges.get(fromId)!.add(this.cellId(ri, ci));
-            });
+            // Check if this is a column formula or cell formula
+            const cell = table.rows[rowIdx].cells[colIdx];
+            const isColumnFormula = cell.isColumnFormula === true;
+
+            if (isColumnFormula) {
+              // Column formula: aggregate all rows (including current row)
+              // Check for self-reference (circular dependency)
+              if (ci === colIdx) {
+                // Self-reference in column formula - will be caught as circular dependency
+                table.rows.forEach((_, ri) => {
+                  edges.get(fromId)!.add(this.cellId(ri, ci));
+                });
+              } else {
+                // Normal column formula aggregation
+                table.rows.forEach((_, ri) => {
+                  edges.get(fromId)!.add(this.cellId(ri, ci));
+                });
+              }
+            } else {
+              // Cell formula: aggregate from row 0 to row before current
+              for (let ri = 0; ri < rowIdx; ri++) {
+                edges.get(fromId)!.add(this.cellId(ri, ci));
+              }
+            }
           }
         } else {
           expr.args.forEach((a) =>
@@ -251,6 +274,7 @@ export class Evaluator {
         const evalCtx: EvaluationContext = {
           currentRow: row,
           rowIndex: node.row,
+          colIndex: node.col,
           table,
           columns: ctx.columns,
           aliases: ctx.aliases,
@@ -508,12 +532,22 @@ export class Evaluator {
   //   returns [100, 200, 300]  (row 3 excluded)
   private getColumnValues(columnName: string, ctx: EvaluationContext): CellValue[] {
     const { index } = this.resolveColumnIndex(columnName, ctx);
-    return ctx.table.rows
-      .filter((_, i) => i !== ctx.rowIndex)
-      .map((row) => {
+    const currentCell = ctx.table.rows[ctx.rowIndex].cells[ctx.colIndex];
+    const isColumnFormula = currentCell.isColumnFormula === true;
+
+    if (isColumnFormula) {
+      // Column formula: aggregate all rows
+      return ctx.table.rows.map((row) => {
         const cell = row.cells[index];
         return cell.computed !== undefined ? cell.computed : cell.value;
       });
+    } else {
+      // Cell formula: aggregate from row 0 to row before current
+      return ctx.table.rows.slice(0, ctx.rowIndex).map((row) => {
+        const cell = row.cells[index];
+        return cell.computed !== undefined ? cell.computed : cell.value;
+      });
+    }
   }
 
   private funcSum(args: Expression[], ctx: EvaluationContext): number {
