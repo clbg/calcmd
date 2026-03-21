@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { calcmd, ParsedTable } from '@calcmd/core';
+import { calcmd, ParsedTable, formatValue } from '@calcmd/core';
 
 const DEFAULT_MARKDOWN = `| Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
@@ -140,8 +140,8 @@ export default function LiveDemo() {
                         const display = cell.error
                           ? '#ERROR'
                           : cell.computed !== undefined
-                            ? String(cell.computed)
-                            : String(cell.value ?? '');
+                            ? formatValue(cell.computed)
+                            : formatValue(cell.value ?? '');
                         return (
                           <td
                             key={ci}
