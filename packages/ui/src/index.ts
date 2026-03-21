@@ -1,7 +1,11 @@
-// @calcmd/playground — UI components for CalcMD
+// @calcmd/ui — Web Components for CalcMD
 
-export { default as Editor } from './Editor';
-export { default as Preview } from './Preview';
+export { CalcMDPreview } from './preview';
+export { CalcMDEditor } from './editor';
 export { EXAMPLES } from './examples';
-export type { EditorProps } from './Editor';
-export type { PreviewProps } from './Preview';
+
+// Re-export for convenience
+export type { ParsedTable } from '@calcmd/core';
+
+// React wrappers (only available when using in React projects)
+export { Preview, Editor } from './react-wrappers';

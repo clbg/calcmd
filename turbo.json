@@ -4,6 +4,9 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "@calcmd/ui#build": {
+      "outputs": []
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

@@ -12,8 +12,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && cp dist/index.html dist/404.html",
-    "preview": "vite preview"
+    "build": "vite build && cp dist/index.html dist/404.html",
+    "preview": "vite preview",
+    "typecheck": "tsc"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
