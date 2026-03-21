@@ -164,7 +164,7 @@ export default function PlaygroundPage() {
               <Preview
                 table={result}
                 selectedCell={selectedCell}
-                onCellClick={(r, c) => setSelectedCell({ row: r, col: c })}
+                onCellClick={(r, c) => setSelectedCell(r < 0 || c < 0 ? null : { row: r, col: c })}
               />
             )}
             {result && result.errors.length > 0 && (
