@@ -84,7 +84,7 @@
 
 .header-formula {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: var(--formula-color);
   font-weight: normal;
 }
 
@@ -97,7 +97,7 @@
 }
 
 .preview-cell:hover {
-  background: rgba(88, 166, 255, 0.05);
+  background: rgba(167, 139, 250, 0.05);
 }
 
 .cell-content {
@@ -110,7 +110,7 @@
 .cell-value { flex: 1; }
 
 .cell-formula-indicator {
-  color: var(--accent);
+  color: var(--formula-color);
   font-weight: bold;
   font-size: 0.7rem;
   flex-shrink: 0;
@@ -124,18 +124,18 @@
 
 .has-formula {
   background: var(--formula-bg);
-  color: var(--accent);
+  color: var(--formula-color);
   border-left: 2px solid var(--formula-border);
 }
 
 .has-formula:hover {
-  background: rgba(28, 45, 63, 0.8);
+  background: rgba(30, 27, 46, 0.8);
 }
 
 .has-formula.has-agg {
-  background: #1c2d1f;
-  color: var(--accent2);
-  border-left: 2px solid var(--accent2);
+  background: #1e1b2e;
+  color: var(--formula-color);
+  border-left: 2px solid var(--formula-border);
 }
 
 .has-error {
@@ -144,8 +144,8 @@
 }
 
 .selected {
-  background: rgba(88, 166, 255, 0.12) !important;
-  outline: 2px solid var(--accent);
+  background: rgba(167, 139, 250, 0.12) !important;
+  outline: 2px solid var(--highlight-selected);
   outline-offset: -2px;
 }
 

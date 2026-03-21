@@ -8,8 +8,10 @@
   --muted: #8b949e;
   --accent: #58a6ff;
   --accent2: #3fb950;
+  --formula-color: #58a6ff;
   --formula-bg: #1c2d3f;
   --formula-border: #388bfd;
+  --highlight-selected: #a78bfa;
   --error: #f85149;
   --warning: #d29922;
 }

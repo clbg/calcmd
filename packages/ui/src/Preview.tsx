@@ -26,9 +26,9 @@ function cellId(row: number, col: number): string {
 
 const ROLE_STYLES: Record<NonNullable<CellRole>, React.CSSProperties> = {
   selected: {
-    outline: '2px solid var(--accent)',
+    outline: '2px solid var(--highlight-selected)',
     outlineOffset: '-2px',
-    background: 'rgba(88,166,255,0.12)',
+    background: 'rgba(167,139,250,0.12)',
   },
   input: {
     outline: '2px solid #3fb950',
@@ -43,7 +43,10 @@ const ROLE_STYLES: Record<NonNullable<CellRole>, React.CSSProperties> = {
 };
 
 const HEADER_ROLE_STYLES: Record<NonNullable<CellRole>, React.CSSProperties> = {
-  selected: { borderBottom: '3px solid var(--accent)', background: 'rgba(88,166,255,0.12)' },
+  selected: {
+    borderBottom: '3px solid var(--highlight-selected)',
+    background: 'rgba(167,139,250,0.12)',
+  },
   input: { borderBottom: '3px solid #3fb950', background: 'rgba(63,185,80,0.10)' },
   dependent: {
     borderBottom: '3px solid rgba(210,153,34,0.9)',
