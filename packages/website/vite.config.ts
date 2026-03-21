@@ -11,5 +11,7 @@ export default defineConfig({
       '@calcmd/ui': path.resolve(__dirname, '../ui/src'),
       '@calcmd/core': path.resolve(__dirname, '../core/src'),
     },
+    // Ensure only one copy of React is bundled (prevents useState null errors)
+    dedupe: ['react', 'react-dom'],
   },
 });
