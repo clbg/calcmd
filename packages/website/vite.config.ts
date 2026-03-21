@@ -7,16 +7,9 @@ export default defineConfig({
   base: '/calcmd/',
   resolve: {
     alias: {
-      // Allow importing UI component source directly (no build step)
+      // Import source directly — no build step, changes picked up instantly
       '@calcmd/ui': path.resolve(__dirname, '../ui/src'),
-    },
-  },
-  optimizeDeps: {
-    include: ['@calcmd/core'],
-  },
-  build: {
-    commonjsOptions: {
-      include: [/@calcmd\/core/, /node_modules/],
+      '@calcmd/core': path.resolve(__dirname, '../core/src'),
     },
   },
 });
