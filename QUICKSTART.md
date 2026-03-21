@@ -19,7 +19,7 @@ pnpm install
 | Package | Description |
 |---------|-------------|
 | `@calcmd/core` | Parser + evaluator library |
-| `@calcmd/ui` | Reusable React components (Editor, Preview) |
+| `@calcmd/ui` | Web Components (Editor, Preview) using Lit |
 | `@calcmd/website` | Landing page + playground (single app) |
 
 ---
