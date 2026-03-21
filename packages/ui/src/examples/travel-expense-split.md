@@ -7,4 +7,4 @@
 | Taxi               | 1200  | 0    | 600                         |                                      |
 | **Total**          | @ap: =sum(Alice) | @bp: =sum(Bob) | **=sum(Each)** |               |
 | **Alice owes Bob** |       |      |               =0           | =if(@bp>@ap,round((@bp-@ap)/2,0),0) |
-| **Bob owes Alice** |       |      |                =0          | =if(@ap>@bp,round((@ap-@bp)/2,0),0) |
+| **Bob owes Alice** |       |      |               =0           | =if(@ap>@bp,round((@ap-@bp)/2,0),0) |
