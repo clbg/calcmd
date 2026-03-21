@@ -105,11 +105,20 @@ export function format(markdown: string): string {
 // --- fill ---
 
 /**
- * Format a cell value for display or fill output.
- * Numbers are rounded to 15 significant digits (matching Excel's display behaviour)
- * to avoid surfacing IEEE 754 floating-point noise like 13.000000000000002.
+ * Format a cell value for display (Preview).
+ * Numbers are rounded to 6 significant digits — enough for most business
+ * use cases while avoiding long decimal tails like 8.33333333.
+ * Use round() in formulas for precise control.
  */
 export function formatValue(v: CellValue): string {
+  if (v === null) return '';
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'number') return parseFloat(v.toPrecision(6)).toString();
+  return String(v);
+}
+
+/** Format a cell value for writing back to markdown source (fill). Uses 15 sig digits to preserve accuracy. */
+function formatValueForFill(v: CellValue): string {
   if (v === null) return '';
   if (typeof v === 'boolean') return v ? 'true' : 'false';
   if (typeof v === 'number') return parseFloat(v.toPrecision(15)).toString();
@@ -176,7 +185,7 @@ export function fill(markdown: string, table: ParsedTable): string {
       const formula = cell.effectiveFormula;
       if (!formula || cell.error || cell.computed === undefined) return rawCell;
 
-      const val = formatValue(cell.computed);
+      const val = formatValueForFill(cell.computed);
       const isCellFormula = !!cell.formula;
       const filled = isCellFormula ? `**${val}=${formula}**` : `${val}=${formula}`;
       const leading = rawCell.match(/^(\s*)/)?.[1] ?? ' ';
