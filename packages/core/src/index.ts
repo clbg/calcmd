@@ -7,7 +7,7 @@ import { ParsedTable } from './types';
 export { Parser } from './parser';
 export { FormulaParser } from './formula-parser';
 export { Evaluator } from './evaluator';
-export { format, fill, formatValue } from './utils';
+export { format, fill, formatValue, DISPLAY_PRECISION, SOURCE_PRECISION } from './utils';
 
 export type {
   Table,

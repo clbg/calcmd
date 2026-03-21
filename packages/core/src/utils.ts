@@ -5,6 +5,14 @@
 
 import type { ParsedTable, CellValue } from './types';
 
+// --- constants ---
+
+/** Significant digits used when displaying computed numbers in the Preview. */
+export const DISPLAY_PRECISION = 6;
+
+/** Significant digits used when writing computed numbers back to markdown source (fill). */
+export const SOURCE_PRECISION = 15;
+
 // --- format ---
 
 /** Visual width of a string — CJK characters count as 2 */
@@ -113,7 +121,7 @@ export function format(markdown: string): string {
 export function formatValue(v: CellValue): string {
   if (v === null) return '';
   if (typeof v === 'boolean') return v ? 'true' : 'false';
-  if (typeof v === 'number') return parseFloat(v.toPrecision(6)).toString();
+  if (typeof v === 'number') return parseFloat(v.toPrecision(DISPLAY_PRECISION)).toString();
   return String(v);
 }
 
@@ -121,7 +129,7 @@ export function formatValue(v: CellValue): string {
 function formatValueForFill(v: CellValue): string {
   if (v === null) return '';
   if (typeof v === 'boolean') return v ? 'true' : 'false';
-  if (typeof v === 'number') return parseFloat(v.toPrecision(15)).toString();
+  if (typeof v === 'number') return parseFloat(v.toPrecision(SOURCE_PRECISION)).toString();
   return String(v);
 }
 
