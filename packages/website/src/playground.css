@@ -160,3 +160,45 @@
   opacity: 0.5;
   margin-right: 0.2rem;
 }
+
+/* Mobile adaptations */
+@media (max-width: 768px) {
+  .editor-toolbar {
+    padding: 0.3rem 0.5rem;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  
+  .editor-textarea {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .preview-container {
+    padding: 0.5rem;
+  }
+  
+  .preview-table {
+    font-size: 0.75rem;
+  }
+  
+  .preview-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .header-name {
+    font-size: 0.75rem;
+  }
+  
+  .header-formula {
+    font-size: 0.7rem;
+  }
+  
+  .preview-cell {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .cell-formula-indicator {
+    font-size: 0.65rem;
+  }
+}

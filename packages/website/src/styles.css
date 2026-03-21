@@ -33,3 +33,14 @@ code {
   padding: 0.1em 0.35em;
   border-radius: 3px;
 }
+
+/* Mobile-friendly utilities */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  code {
+    font-size: 0.8em;
+  }
+}

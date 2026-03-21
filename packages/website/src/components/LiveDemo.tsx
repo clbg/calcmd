@@ -36,20 +36,13 @@ export default function LiveDemo() {
   );
 
   return (
-    <section id="demo" style={{ maxWidth: 860, margin: '0 auto', padding: '3rem 2rem' }}>
+    <section id="demo" style={{ maxWidth: 860, margin: '0 auto', padding: '3rem 1.5rem' }}>
       <div style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Live demo</div>
       <p style={{ color: 'var(--muted)', marginBottom: '1.5rem' }}>
         Edit the markdown below — the table updates in real time using <code>@calcmd/core</code>.
       </p>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
-          alignItems: 'start',
-        }}
-      >
+      <div className="live-demo-grid">
         {/* Editor */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {label('Markdown input')}
@@ -108,6 +101,20 @@ export default function LiveDemo() {
           )}
         </div>
       </div>
+      <style>{`
+        .live-demo-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          align-items: start;
+        }
+        @media (max-width: 768px) {
+          .live-demo-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+        }
+      `}</style>
     </section>
   );
 }

@@ -21,6 +21,7 @@ export default function PlaygroundPage() {
   const [result, setResult] = useState<ParsedTable | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
 
   const handleChange = useCallback((value: string) => {
     setMarkdown(value);
@@ -92,29 +93,27 @@ export default function PlaygroundPage() {
         ))}
       </div>
 
-      {/* Editor + Preview split */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
-        {/* Editor pane */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            borderRight: '1px solid var(--border)',
-            overflow: 'hidden',
-          }}
+      {/* Mobile view toggle */}
+      <div className="mobile-toggle">
+        <button
+          onClick={() => setMobileView('editor')}
+          className={mobileView === 'editor' ? 'active' : ''}
         >
-          <div
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              padding: '0.6rem 1rem',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            Editor
-          </div>
+          Editor
+        </button>
+        <button
+          onClick={() => setMobileView('preview')}
+          className={mobileView === 'preview' ? 'active' : ''}
+        >
+          Preview
+        </button>
+      </div>
+
+      {/* Editor + Preview split */}
+      <div className="playground-split">
+        {/* Editor pane */}
+        <div className={`editor-pane ${mobileView === 'editor' ? 'mobile-active' : ''}`}>
+          <div className="pane-label">Editor</div>
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <Editor
               value={markdown}
@@ -131,19 +130,8 @@ export default function PlaygroundPage() {
         </div>
 
         {/* Preview pane */}
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              padding: '0.6rem 1rem',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            Preview
-          </div>
+        <div className={`preview-pane ${mobileView === 'preview' ? 'mobile-active' : ''}`}>
+          <div className="pane-label">Preview</div>
           <div style={{ flex: 1, overflow: 'auto' }}>
             {error && (
               <div
@@ -198,6 +186,92 @@ export default function PlaygroundPage() {
           </div>
         </div>
       </div>
+
+      <style>{`
+        .mobile-toggle {
+          display: none;
+          border-bottom: 1px solid var(--border);
+          background: var(--surface);
+        }
+        
+        .mobile-toggle button {
+          flex: 1;
+          padding: 0.75rem;
+          background: transparent;
+          border: none;
+          color: var(--muted);
+          cursor: pointer;
+          font-size: 0.85rem;
+          font-weight: 500;
+          border-bottom: 2px solid transparent;
+        }
+        
+        .mobile-toggle button.active {
+          color: var(--accent);
+          border-bottom-color: var(--accent);
+        }
+        
+        .playground-split {
+          flex: 1;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          overflow: hidden;
+        }
+        
+        .editor-pane,
+        .preview-pane {
+          display: flex;
+          flex-direction: 'column';
+          overflow: hidden;
+        }
+        
+        .editor-pane {
+          border-right: 1px solid var(--border);
+        }
+        
+        .pane-label {
+          font-size: 0.75rem;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          padding: 0.6rem 1rem;
+          border-bottom: 1px solid var(--border);
+        }
+        
+        @media (max-width: 768px) {
+          .mobile-toggle {
+            display: flex;
+          }
+          
+          .playground-split {
+            grid-template-columns: 1fr;
+          }
+          
+          .editor-pane,
+          .preview-pane {
+            display: none;
+          }
+          
+          .editor-pane.mobile-active,
+          .preview-pane.mobile-active {
+            display: flex;
+          }
+          
+          .editor-pane {
+            border-right: none;
+          }
+          
+          .pane-label {
+            display: none;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .playground-split {
+            height: calc(100vh - 48px - 48px - 48px);
+          }
+        }
+      `}</style>
     </div>
   );
 }
