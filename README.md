@@ -256,7 +256,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT © [Your Name]
+MIT © Charlie
 
 ---
 
