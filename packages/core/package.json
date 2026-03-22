@@ -1,7 +1,7 @@
 {
   "name": "@calcmd/core",
   "version": "0.1.0",
-  "description": "CalcMD core parser and evaluator",
+  "description": "Verifiable calculations in markdown tables - parser and evaluator for CalcMD specification",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
@@ -12,10 +12,16 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "jest",
-    "dev": "tsc --watch -p tsconfig.esm.json"
+    "dev": "tsc --watch -p tsconfig.esm.json",
+    "prepublishOnly": "pnpm test && pnpm build"
   },
   "jest": {
     "preset": "ts-jest",
@@ -25,10 +31,27 @@
     "calcmd",
     "markdown",
     "table",
-    "formula"
+    "formula",
+    "calculator",
+    "spreadsheet",
+    "ai",
+    "llm",
+    "verifiable",
+    "calculations",
+    "parser",
+    "evaluator"
   ],
   "author": "CalcMD Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clbg/calcmd.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://clbg.github.io/calcmd/",
+  "bugs": {
+    "url": "https://github.com/clbg/calcmd/issues"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",

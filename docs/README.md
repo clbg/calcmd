@@ -16,6 +16,7 @@ This project follows Amazon's Working Backwards methodology. Read in this order:
 8. **[07-Backlog](07-Backlog.md)** - Feature backlog and prioritization
 9. **[08-Decisions](08-Decisions.md)** - Architecture Decision Records (ADRs)
 10. **[09-Promotion-Strategy](09-Promotion-Strategy.md)** - Marketing and outreach plan
+11. **[10-Release-Process](10-Release-Process.md)** - npm publishing and release workflow
 
 ## Quick Links
 
