@@ -1,82 +1,134 @@
-import * as loader from '@assemblyscript/loader';
-import wasmBase64 from '../build/release.wasm';
-import type { ParsedTable } from './types';
+import init, { calcmd as wasmCalcmd } from '../pkg/calcmd_wasm.js';
 
-// Export all types seamlessly
-export * from './types';
-
-function decodeBase64(base64: string): Uint8Array {
-  // Use generic atob for base64 decoding (available in Node 16+ and all modern browsers)
-  const binaryString = globalThis.atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
+export interface CellValue {
+  type: 'number' | 'string' | 'boolean' | 'null';
+  value: number | string | boolean | null;
 }
 
-// -------------------------------------------------------------
-// Top-Level Await WASM Initialization
-// -------------------------------------------------------------
-let instance: any;
-let exports: any;
+export interface Cell {
+  value: number | string | boolean | null;
+  label?: string;
+  formula?: string;
+  effectiveFormula?: string;
+  computed?: number | string | boolean | null;
+  error?: string;
+  bold?: boolean;
+  isColumnFormula?: boolean;
+}
 
-try {
-  // Isomorphic WASM decoding
-  const wasmBytes = decodeBase64(wasmBase64);
-  
-  // Actually, @assemblyscript/loader expects instantiate to be called on binary bytes or a WebAssembly.Module
-  const compiled = await WebAssembly.compile(wasmBytes.buffer as ArrayBuffer);
-  instance = await loader.instantiate(compiled, {
-    // any imports needed can be passed here (env, math, etc. are handled by loader natively if not specified, 
-    // but typically AS needs some standard imports unless bindings are raw and pure)
-    env: {
-      abort(message: number, fileName: number, line: number, column: number) {
-        console.error(`Abort at \${line}:\${column}`);
-      }
+export interface Row {
+  cells: Cell[];
+}
+
+export interface Column {
+  name: string;
+  alias?: string;
+  formula?: string;
+  cells: Cell[];
+}
+
+export interface LabelLocation {
+  row: number;
+  col: number;
+}
+
+export interface Table {
+  columns: Column[];
+  rows: Row[];
+  labels: Record<string, LabelLocation>;
+  aliases: Record<string, string>;
+}
+
+export interface CellNode {
+  id: string;
+  row: number;
+  col: number;
+  formula?: string;
+}
+
+export interface DependencyGraph {
+  nodes: Record<string, CellNode>;
+  edges: Record<string, string[]>;
+  order: string[];
+}
+
+export interface ValidationError {
+  error_type: string;
+  row?: number;
+  column?: string;
+  message: string;
+}
+
+export interface ParsedTable {
+  table: Table;
+  dependencies: DependencyGraph;
+  errors: ValidationError[];
+}
+
+let initialized = false;
+
+/**
+ * Initialize the WASM module. Must be called before using calcmd().
+ * This is automatically called on first use, but you can call it explicitly
+ * to control when the WASM module is loaded.
+ *
+ * @param wasmModule - Optional WASM module or buffer (for Node.js)
+ */
+export async function initialize(wasmModule?: WebAssembly.Module | BufferSource): Promise<void> {
+  if (!initialized) {
+    if (wasmModule) {
+      await init(wasmModule);
+    } else {
+      await init();
     }
-  });
-  
-  exports = instance.exports;
-} catch (e) {
-  console.error("Failed to instantiate @calcmd/wasm module", e);
+    initialized = true;
+  }
 }
 
 /**
- * Synchronously evaluate CalcMD Markdown using the WASM backend.
- * This function behaves identically to the @calcmd/core equivalent, but runs
- * ~2-5x faster depending on the table size and JS engine.
- * 
- * @param markdown The input CalcMD formatted markdown table
- * @returns ParsedTable The generated JSON representation of the cell calculations
+ * Parse and evaluate a CalcMD markdown table.
+ *
+ * @param markdown - The markdown table string with CalcMD formulas
+ * @returns ParsedTable with computed values and any errors
+ *
+ * @example
+ * ```typescript
+ * const result = await calcmd(`
+ * | Item | Qty | Price | Total=Qty*Price |
+ * |------|-----|-------|-----------------|
+ * | Apple | 3 | 1.5 | |
+ * | Banana | 5 | 0.8 | |
+ * `);
+ *
+ * console.log(result.table.rows[0].cells[3].computed); // 4.5
+ * ```
  */
-export function calcmd(markdown: string): ParsedTable {
-  if (!exports) {
-    throw new Error("WASM module failed to initialize. Check console logs for WASM compile/instantiate errors.");
-  }
-  
-  const { __newString, __getString, calcmd: wasmCalcmd } = exports;
-  
-  let inputPtr = 0;
-  let resultPtr = 0;
-  
-  try {
-    // 1. Allocate string in WASM memory
-    inputPtr = __newString(markdown);
-    
-    // 2. Call the WASM calculation function
-    resultPtr = wasmCalcmd(inputPtr);
-    
-    // 3. Extract the resulting JSON string
-    const resultJson = __getString(resultPtr);
-    
-    // 4. Parse into JS object
-    return JSON.parse(resultJson) as ParsedTable;
-  } finally {
-    // AssemblyScript memory management (if using standard runtime)
-    // Actually, 'raw' bindings means memory is not automatically exported or freed trivially 
-    // without the AS loader helping. The loader manages memory if you use __pin / __unpin, 
-    // but for simple cases the AS Garbage Collector handles short-lived objects.
-  }
+export async function calcmd(markdown: string): Promise<ParsedTable> {
+  await initialize();
+  const resultJson = wasmCalcmd(markdown);
+  return JSON.parse(resultJson) as ParsedTable;
 }
+
+/**
+ * Synchronous version of calcmd(). Only use this after calling initialize().
+ * Throws an error if the WASM module is not initialized.
+ *
+ * @param markdown - The markdown table string with CalcMD formulas
+ * @returns ParsedTable with computed values and any errors
+ */
+export function calcmdSync(markdown: string): ParsedTable {
+  if (!initialized) {
+    throw new Error('WASM module not initialized. Call initialize() or use calcmd() instead.');
+  }
+  const resultJson = wasmCalcmd(markdown);
+  return JSON.parse(resultJson) as ParsedTable;
+}
+
+// Re-export types for convenience
+export type {
+  CellValue as Value,
+  Cell as CellData,
+  Row as RowData,
+  Column as ColumnData,
+  Table as TableData,
+};

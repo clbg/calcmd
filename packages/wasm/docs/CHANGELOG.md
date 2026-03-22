@@ -1,8 +1,59 @@
 # CalcMD WASM Change History
 
-Complete history of the CalcMD WASM implementation, including major milestones, refactorings, and optimizations.
+Complete history of the CalcMD WASM implementation.
 
-## 2026-03-22: Library Optimization
+## 2026-03-23: Rust Implementation Complete
+
+### Summary
+
+Completed full Rust + WASM implementation with all core features and 7/7 tests passing.
+
+### Technology Stack
+
+- **Rust** - Core implementation
+- **pest** - Parser generator (declarative grammar)
+- **petgraph** - Graph algorithms (tarjan_scc for topological sort)
+- **wasm-bindgen** - Rust-JavaScript interop
+- **serde** - JSON serialization
+- **wasm-pack** - WASM build tool
+
+### Results
+
+- ✅ All 7 basic tests passing
+- ✅ WASM build: ~15KB (release)
+- ✅ Build time: ~4 seconds
+- ✅ Full CalcMD feature support
+
+### Bug Fixes
+
+1. **JSON Structure** - Removed `#[serde(flatten)]` to match TypeScript interface
+2. **String Parsing** - Fixed pest string literal handling (remove quotes)
+3. **Type Compatibility** - Used `#[serde(rename)]` for camelCase fields
+4. **Test Case** - Fixed label test to use correct syntax
+
+### Lessons Learned
+
+**What Worked Well:**
+- Using mature libraries (pest, petgraph) saved significant development time
+- Rust's type system caught many errors at compile time
+- wasm-bindgen made JavaScript interop seamless
+- Test-driven approach helped catch issues early
+
+**Challenges:**
+- String literal parsing in pest required manual quote removal
+- Serde serialization needed careful field naming for JS compatibility
+- Error handling without exceptions required different patterns
+- WASM debugging is harder than native Rust
+
+**Best Practices:**
+- Start with simple tests and build up complexity
+- Use declarative tools (pest) when possible
+- Keep TypeScript wrapper thin and focused
+- Document architecture decisions as you go
+
+---
+
+## 2026-03-22: Library Optimization (AssemblyScript - Legacy)
 
 ### Changes
 

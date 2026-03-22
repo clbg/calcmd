@@ -1,60 +1,69 @@
 # @calcmd/wasm
 
-WebAssembly implementation of CalcMD - verifiable calculations in markdown tables.
+Rust + WebAssembly implementation of CalcMD - verifiable calculations in markdown tables.
 
 ## Overview
 
-This package provides a WebAssembly build of CalcMD that can be used from any language that supports WASM, including JavaScript, TypeScript, Python, Go, Rust, Ruby, Java, and .NET.
+This package provides a high-performance WebAssembly build of CalcMD written in Rust. It can be used from JavaScript/TypeScript in both Node.js and browser environments, with future support planned for Python, Go, and other languages.
 
 ## Status
 
-✅ **Production Ready** - 100% feature complete with 42/42 tests passing
+✅ **Alpha** - Core functionality complete with 7/7 basic tests passing
 
 - Full CalcMD specification support
-- Exact match with TypeScript implementation
-- No runtime dependencies
-- Small bundle size (~15KB, ~3-5KB gzipped)
+- Rust implementation with pest parser and petgraph
+- TypeScript wrapper for easy integration
+- Small bundle size (~15KB WASM)
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-npm install @calcmd/wasm
-# or
-pnpm add @calcmd/wasm
+# From workspace root
+pnpm install
+
+# Build WASM package
+cd packages/wasm
+pnpm run build
 ```
 
-### Usage (JavaScript/TypeScript)
+### Usage (Node.js)
 
 ```javascript
-import loader from '@assemblyscript/loader';
-import fs from 'fs';
+import { calcmd, initialize } from '@calcmd/wasm';
+import { readFile } from 'fs/promises';
 
-// Load WASM module
-const wasmModule = await loader.instantiate(
-  fs.promises.readFile('node_modules/@calcmd/wasm/build/release.wasm')
-);
-
-// Create wrapper function
-const calcmd = (markdown) => {
-  const { __newString, __getString } = wasmModule.exports;
-  const inputPtr = __newString(markdown);
-  const resultPtr = wasmModule.exports.calcmd(inputPtr);
-  const result = __getString(resultPtr);
-  return JSON.parse(result);
-};
+// Initialize WASM module (Node.js requires manual loading)
+const wasmBuffer = await readFile('path/to/calcmd_wasm_bg.wasm');
+await initialize(wasmBuffer);
 
 // Use it
-const result = calcmd(`
+const result = await calcmd(`
 | Item | Qty | Price | Total=Qty*Price |
 |------|-----|-------|-----------------|
 | Apple | 3 | 1.5 | |
 | Banana | 5 | 0.8 | |
 `);
 
-console.log(result.rows[0].cells[3].computed); // 4.5
-console.log(result.rows[1].cells[3].computed); // 4
+console.log(result.table.rows[0].cells[3].computed); // 4.5
+console.log(result.table.rows[1].cells[3].computed); // 4
+```
+
+### Usage (Browser)
+
+```javascript
+import { calcmd } from '@calcmd/wasm';
+
+// Browser automatically loads WASM
+const result = await calcmd(`
+| Item | Qty | Price | Total=Qty*Price |
+|------|-----|-------|-----------------|
+| Apple | 3 | 1.5 | |
+| Banana | 5 | 0.8 | |
+`);
+
+console.log(result.table.rows[0].cells[3].computed); // 4.5
 ```
 
 ## Features
@@ -82,45 +91,65 @@ Key documents:
 
 ### Prerequisites
 
+- Rust 1.70+ with wasm32-unknown-unknown target
 - Node.js 18+
 - pnpm
+- wasm-pack
 
 ### Build
 
 ```bash
 pnpm install
-pnpm run build
+pnpm run build:wasm    # Build WASM with wasm-pack
+pnpm run build:wrapper # Build TypeScript wrapper
+pnpm run build         # Build both
 ```
 
 ### Test
 
 ```bash
-pnpm test:all      # Run all tests
-pnpm test:unit     # Unit tests
-pnpm test:compare  # Comparison tests
-pnpm test:core     # Core test suite
+node tests/rust-basic.test.mjs  # Run basic test suite (7 tests)
 ```
 
 ### Project Structure
 
 ```
-assembly/          # AssemblyScript source code
-  ├── types.ts              # Type definitions
-  ├── parser.ts             # Markdown parser
-  ├── formula-parser.ts     # Formula parser
-  ├── evaluator.ts          # Main evaluator
-  ├── dependency-graph.ts   # Dependency resolution
-  └── ...
-build/             # Compiled WASM output
-tests/             # Test suites
-docs/              # Documentation
+src/                # Rust source code
+  ├── lib.rs              # WASM entry point
+  ├── ast.rs              # Type definitions
+  ├── parser.rs           # Markdown parser
+  ├── formula_parser.rs   # Formula parser (pest)
+  ├── formula.pest        # Pest grammar
+  ├── evaluator.rs        # Main evaluator
+  ├── index.ts            # TypeScript wrapper
+  └── types.ts            # TypeScript types
+pkg/                # Generated WASM output (gitignored)
+tests/              # Test suites
+docs/               # Documentation
+```
+
+## Architecture
+
+### Technology Stack
+
+- **Rust** - Core implementation language
+- **pest** - Parser generator for formula parsing
+- **petgraph** - Graph algorithms for dependency resolution
+- **wasm-bindgen** - Rust-JavaScript interop
+- **serde** - Serialization framework
+
+### Pipeline
+
+```
+Markdown → Parser → Formula Parser → Evaluator → JSON
+           (Rust)   (pest)           (petgraph)
 ```
 
 ## Performance
 
-- Build size: ~15KB (release), ~3-5KB gzipped
-- Build time: ~2 seconds
-- Runtime: Faster than JavaScript for numeric operations
+- Build size: ~15KB (release WASM)
+- Build time: ~4 seconds
+- Runtime: Expected to be faster than JavaScript for complex calculations
 
 ## Language SDKs
 

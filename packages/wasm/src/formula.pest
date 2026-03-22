@@ -1,0 +1,39 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+number = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+string = @{ "\"" ~ inner_str ~ "\"" | "'" ~ inner_str_single ~ "'" }
+inner_str = @{ (!"\"" ~ ANY)* }
+inner_str_single = @{ (!"'" ~ ANY)* }
+
+boolean = @{ ^"true" | ^"false" }
+label = @{ "@" ~ (ASCII_ALPHANUMERIC | "_")+ }
+ident = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+// Operators
+op_or = { ^"or" }
+op_and = { ^"and" }
+op_comp = { "==" | "!=" | ">=" | "<=" | ">" | "<" }
+op_add = { "+" | "-" }
+op_mul = { "*" | "/" | "%" }
+op_unary = { "-" | ^"not" }
+
+// Function: ident followed by parentheses
+function = { ident ~ "(" ~ (expr ~ ("," ~ expr)*)? ~ ")" }
+
+// Parenthesized expression
+paren = { "(" ~ expr ~ ")" }
+
+primary = _{ boolean | function | label | ident | number | string | paren }
+
+atom = _{ unary | primary }
+unary = { op_unary ~ atom }
+
+expr_mul = { atom ~ (op_mul ~ atom)* }
+expr_add = { expr_mul ~ (op_add ~ expr_mul)* }
+expr_comp = { expr_add ~ (op_comp ~ expr_add)* }
+expr_and = { expr_comp ~ (op_and ~ expr_comp)* }
+expr_or = { expr_and ~ (op_or ~ expr_and)* }
+
+expr = _{ expr_or }
+
+formula = _{ SOI ~ expr ~ EOI }

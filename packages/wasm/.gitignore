@@ -4,3 +4,13 @@ build/*.wasm
 build/*.wasm.map
 build/*.wat
 *.log
+
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# WASM build artifacts  
+pkg/
+*.wasm
+*.wasm.map

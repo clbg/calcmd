@@ -1,19 +1,20 @@
 # CalcMD WASM Documentation
 
-Complete documentation for the CalcMD WebAssembly implementation.
+Complete documentation for the CalcMD Rust + WebAssembly implementation.
 
 ## 📚 Documentation Index
 
 ### Getting Started
 - [Main README](../README.md) - Quick start and overview
-- [Architecture Guide](ARCHITECTURE.md) - System design and implementation details
+- [Rust Implementation Guide](RUST_IMPLEMENTATION.md) - Architecture and design
 
 ### Development
 - [Development Guide](DEVELOPMENT.md) - Building, testing, and contributing
 - [Change History](CHANGELOG.md) - Project evolution and major changes
 
 ### Reference
-- [API Reference](API.md) - Public API documentation (coming soon)
+- [Library Optimization](LIBRARY-OPTIMIZATION.md) - Performance improvements (legacy AssemblyScript)
+- [Architecture](ARCHITECTURE.md) - Legacy AssemblyScript architecture
 
 ## 🎯 Quick Links
 
