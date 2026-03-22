@@ -70,6 +70,19 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  packages/wasm:
+    dependencies:
+      '@assemblyscript/loader':
+        specifier: ^0.28.10
+        version: 0.28.10
+    devDependencies:
+      assemblyscript:
+        specifier: ^0.27.0
+        version: 0.27.37
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/website:
     dependencies:
       '@calcmd/core':
@@ -111,6 +124,9 @@ importers:
         version: 8.0.0(@types/node@25.5.0)(yaml@2.8.2)
 
 packages:
+
+  '@assemblyscript/loader@0.28.10':
+    resolution: {integrity: sha512-kP1oGEPoMI/b1evKwJinU1JH5telMBYla/u1fnnoXAjB7vUT7mbTexpfjIqWpQsEm3sWERcjIA9eJmtCsemgmQ==}
 
   '@babel/code-frame@7.29.0':
     resolution: {integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==}
@@ -882,6 +898,11 @@ packages:
   argparse@1.0.10:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
 
+  assemblyscript@0.27.37:
+    resolution: {integrity: sha512-YtY5k3PiV3SyUQ6gRlR2OCn8dcVRwkpiG/k2T5buoL2ymH/Z/YbaYWbk/f9mO2HTgEtGWjPiAQrIuvA7G/63Gg==}
+    engines: {node: '>=18', npm: '>=10'}
+    hasBin: true
+
   babel-jest@30.3.0:
     resolution: {integrity: sha512-gRpauEU2KRrCox5Z296aeVHR4jQ98BCnu0IO332D/xpHNOsIH/bgSRk9k6GbKIbBw8vFeN6ctuu6tV8WOyVfYQ==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -917,6 +938,10 @@ packages:
   baseline-browser-mapping@2.10.8:
     resolution: {integrity: sha512-PCLz/LXGBsNTErbtB6i5u4eLpHeMfi93aUv5duMmj6caNu6IphS4q6UevDnL36sZQv9lrP11dbPKGMaXPwMKfQ==}
     engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  binaryen@116.0.0-nightly.20240114:
+    resolution: {integrity: sha512-0GZrojJnuhoe+hiwji7QFaL3tBlJoA+KFUN7ouYSDGZLSo9CKM8swQX8n/UcbR0d1VuZKU+nhogNzv423JEu5A==}
     hasBin: true
 
   brace-expansion@1.1.12:
@@ -1626,6 +1651,9 @@ packages:
     resolution: {integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==}
     engines: {node: '>=18'}
 
+  long@5.3.2:
+    resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
+
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
@@ -2217,6 +2245,8 @@ packages:
     engines: {node: '>=10'}
 
 snapshots:
+
+  '@assemblyscript/loader@0.28.10': {}
 
   '@babel/code-frame@7.29.0':
     dependencies:
@@ -3054,6 +3084,11 @@ snapshots:
     dependencies:
       sprintf-js: 1.0.3
 
+  assemblyscript@0.27.37:
+    dependencies:
+      binaryen: 116.0.0-nightly.20240114
+      long: 5.3.2
+
   babel-jest@30.3.0(@babel/core@7.29.0):
     dependencies:
       '@babel/core': 7.29.0
@@ -3111,6 +3146,8 @@ snapshots:
   balanced-match@4.0.4: {}
 
   baseline-browser-mapping@2.10.8: {}
+
+  binaryen@116.0.0-nightly.20240114: {}
 
   brace-expansion@1.1.12:
     dependencies:
@@ -3951,6 +3988,8 @@ snapshots:
       slice-ansi: 7.1.2
       strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
+
+  long@5.3.2: {}
 
   lru-cache@10.4.3: {}
 

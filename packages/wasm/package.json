@@ -1,0 +1,65 @@
+{
+  "name": "@calcmd/wasm",
+  "version": "0.1.0",
+  "description": "CalcMD WebAssembly implementation - verifiable calculations in markdown tables",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./wasm": "./build/release.wasm"
+  },
+  "files": [
+    "dist",
+    "build/release.wasm",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "asbuild:debug": "asc assembly/index.ts --target debug",
+    "asbuild:release": "asc assembly/index.ts --target release",
+    "asbuild": "npm run asbuild:debug && npm run asbuild:release",
+    "build": "npm run asbuild",
+    "test": "node tests/index.js",
+    "test:unit": "node tests/unit.test.mjs",
+    "test:compare": "node tests/compare.test.mjs",
+    "test:core": "node tests/all-core-tests.mjs",
+    "test:all": "bash run-all-tests.sh",
+    "dev": "npm run asbuild:debug -- --watch",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "calcmd",
+    "markdown",
+    "table",
+    "formula",
+    "calculator",
+    "spreadsheet",
+    "wasm",
+    "webassembly",
+    "assemblyscript"
+  ],
+  "author": "CalcMD Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clbg/calcmd.git",
+    "directory": "packages/wasm"
+  },
+  "homepage": "https://clbg.github.io/calcmd/",
+  "bugs": {
+    "url": "https://github.com/clbg/calcmd/issues"
+  },
+  "devDependencies": {
+    "assemblyscript": "^0.27.0",
+    "typescript": "^5.0.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@assemblyscript/loader": "^0.28.10"
+  }
+}

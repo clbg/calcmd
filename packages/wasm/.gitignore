@@ -1,0 +1,6 @@
+node_modules/
+dist/
+build/*.wasm
+build/*.wasm.map
+build/*.wat
+*.log
