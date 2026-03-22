@@ -24,3 +24,7 @@ jobs:
       - run: pnpm build
       - run: pnpm test
       - run: pnpm lint
+      
+      # WASM-specific tests
+      - name: Test WASM package
+        run: pnpm --filter @calcmd/wasm test:all

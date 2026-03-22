@@ -24,7 +24,7 @@
     "asbuild:release": "asc assembly/index.ts --target release",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release",
     "build": "npm run asbuild",
-    "test": "node tests/index.js",
+    "test": "npm run test:all",
     "test:unit": "node tests/unit.test.mjs",
     "test:compare": "node tests/compare.test.mjs",
     "test:core": "node tests/all-core-tests.mjs",

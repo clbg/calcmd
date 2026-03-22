@@ -17,6 +17,9 @@
     "packages/**/*.{ts,tsx}": [
       "prettier --write",
       "eslint --fix"
+    ],
+    "packages/wasm/assembly/**/*.ts": [
+      "prettier --write"
     ]
   },
   "devDependencies": {
