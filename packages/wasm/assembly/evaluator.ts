@@ -12,17 +12,19 @@ import {
   FunctionCallExpression,
   ParenExpression,
   CellValue,
+  CellValueType,
   NumberValue,
   StringValue,
   BooleanValue,
   NullValue,
+  ErrorValue,
   Column,
 } from './types';
 import { FormulaParser } from './formula-parser';
 import { EvaluationContext } from './evaluator-context';
 import { DependencyGraphBuilder } from './dependency-graph';
 import { Functions } from './evaluator-functions';
-import { cellId } from './utils';
+import { cellId, isError, makeError } from './utils';
 
 export class Evaluator {
   private parser: FormulaParser = new FormulaParser();
@@ -92,9 +94,8 @@ export class Evaluator {
         );
         const result = this.evaluateExpression(ast, evalCtx);
 
-        // Check if result is an error
-        if (result.getType() === 1 && result.toString().startsWith('ERROR:')) {
-          const errorMsg = result.toString().substring(7); // Remove "ERROR: " prefix
+        if (isError(result)) {
+          const errorMsg = (result as ErrorValue).message;
           cell.error = errorMsg;
           cell.computed = null;
           this.addError('runtime', node.row, col.name, errorMsg);
@@ -193,7 +194,7 @@ export class Evaluator {
     }
 
     // Unknown expression type - return error
-    return new StringValue('ERROR: Unknown expression type');
+    return makeError('Unknown expression type');
   }
 
   private evaluateColumnRef(name: string, ctx: EvaluationContext): CellValue {
@@ -216,12 +217,12 @@ export class Evaluator {
       }
     }
 
-    return new StringValue('ERROR: Column ' + name + ' not found');
+    return makeError('Column ' + name + ' not found');
   }
 
   private evaluateLabelRef(label: string, ctx: EvaluationContext): CellValue {
     if (!ctx.labels.has(label)) {
-      return new StringValue('ERROR: Label @' + label + ' not found');
+      return makeError('Label @' + label + ' not found');
     }
 
     const loc = ctx.labels.get(label);
@@ -235,32 +236,31 @@ export class Evaluator {
     const right = this.evaluateExpression(expr.right, ctx);
     const op = expr.operator;
 
-    // Check if either operand is an error
-    if (left.getType() === 1 && left.toString().startsWith('ERROR:')) return left;
-    if (right.getType() === 1 && right.toString().startsWith('ERROR:')) return right;
+    // Propagate errors
+    if (isError(left)) return left;
+    if (isError(right)) return right;
 
-    if (left.getType() === 3 || right.getType() === 3) {
-      // null
+    if (left.getType() === CellValueType.NULL || right.getType() === CellValueType.NULL) {
       if (op === '==') return new BooleanValue(left.getType() === right.getType());
       if (op === '!=') return new BooleanValue(left.getType() !== right.getType());
       return new NullValue();
     }
 
     if (op === '+') {
-      if (left.getType() === 0 && right.getType() === 0) {
+      if (left.getType() === CellValueType.NUMBER && right.getType() === CellValueType.NUMBER) {
         return new NumberValue(left.toNumber() + right.toNumber());
       }
-      if (left.getType() === 1 && right.getType() === 1) {
+      if (left.getType() === CellValueType.STRING && right.getType() === CellValueType.STRING) {
         return new StringValue(left.toString() + right.toString());
       }
-      return new StringValue(
-        'ERROR: Cannot add ' + this.typeName(left) + ' and ' + this.typeName(right),
+      return makeError(
+        'Cannot add ' + this.typeName(left) + ' and ' + this.typeName(right),
       );
     }
 
     if (op === '-' || op === '*' || op === '/' || op === '%') {
-      if (left.getType() !== 0 || right.getType() !== 0) {
-        return new StringValue('ERROR: Cannot perform arithmetic on non-numbers');
+      if (left.getType() !== CellValueType.NUMBER || right.getType() !== CellValueType.NUMBER) {
+        return makeError('Cannot perform arithmetic on non-numbers');
       }
       const l = left.toNumber();
       const r = right.toNumber();
@@ -268,7 +268,7 @@ export class Evaluator {
       if (op === '-') return new NumberValue(l - r);
       if (op === '*') return new NumberValue(l * r);
       if (op === '/') {
-        if (r === 0) return new StringValue('ERROR: Division by zero');
+        if (r === 0) return makeError('Division by zero');
         return new NumberValue(l / r);
       }
       if (op === '%') return new NumberValue(l % r);
@@ -281,9 +281,9 @@ export class Evaluator {
 
     if (op === '>' || op === '<' || op === '>=' || op === '<=') {
       if (left.getType() !== right.getType()) {
-        return new StringValue('ERROR: Cannot compare different types');
+        return makeError('Cannot compare different types');
       }
-      if (left.getType() === 0) {
+      if (left.getType() === CellValueType.NUMBER) {
         const l = left.toNumber();
         const r = right.toNumber();
         if (op === '>') return new BooleanValue(l > r);
@@ -291,7 +291,7 @@ export class Evaluator {
         if (op === '>=') return new BooleanValue(l >= r);
         if (op === '<=') return new BooleanValue(l <= r);
       }
-      if (left.getType() === 1) {
+      if (left.getType() === CellValueType.STRING) {
         const l = left.toString();
         const r = right.toString();
         if (op === '>') return new BooleanValue(l > r);
@@ -299,7 +299,7 @@ export class Evaluator {
         if (op === '>=') return new BooleanValue(l >= r);
         if (op === '<=') return new BooleanValue(l <= r);
       }
-      return new StringValue('ERROR: Cannot compare these types');
+      return makeError('Cannot compare these types');
     }
 
     if (op === 'and') {
@@ -310,19 +310,18 @@ export class Evaluator {
       return new BooleanValue(left.toBoolean() || right.toBoolean());
     }
 
-    return new StringValue('ERROR: Unknown operator: ' + op);
+    return makeError('Unknown operator: ' + op);
   }
 
   private evaluateUnary(expr: UnaryExpression, ctx: EvaluationContext): CellValue {
     const operand = this.evaluateExpression(expr.operand, ctx);
     const op = expr.operator;
 
-    // Check if operand is an error
-    if (operand.getType() === 1 && operand.toString().startsWith('ERROR:')) return operand;
+    if (isError(operand)) return operand;
 
     if (op === '-') {
-      if (operand.getType() !== 0) {
-        return new StringValue('ERROR: Cannot negate non-number');
+      if (operand.getType() !== CellValueType.NUMBER) {
+        return makeError('Cannot negate non-number');
       }
       return new NumberValue(-operand.toNumber());
     }
@@ -331,7 +330,7 @@ export class Evaluator {
       return new BooleanValue(!operand.toBoolean());
     }
 
-    return new StringValue('ERROR: Unknown unary operator: ' + op);
+    return makeError('Unknown unary operator: ' + op);
   }
 
   private evaluateFunction(name: string, args: Expression[], ctx: EvaluationContext): CellValue {
@@ -349,59 +348,54 @@ export class Evaluator {
       return this.evaluateAggregation(lowerName, args, ctx);
     }
 
-    // Math functions
+    // round(value, decimals?)
     if (lowerName === 'round') {
       if (args.length < 1 || args.length > 2) {
-        return new StringValue('ERROR: ROUND requires 1 or 2 arguments');
+        return makeError('ROUND requires 1 or 2 arguments');
       }
       const value = this.evaluateExpression(args[0], ctx);
-      if (value.getType() === 1 && value.toString().startsWith('ERROR:')) return value;
-      if (value.getType() !== 0)
-        return new StringValue('ERROR: ROUND first argument must be a number');
+      if (isError(value)) return value;
+      if (value.getType() !== CellValueType.NUMBER)
+        return makeError('ROUND first argument must be a number');
 
       const decimals =
         args.length === 2 ? this.evaluateExpression(args[1], ctx) : new NumberValue(0);
-      if (decimals.getType() === 1 && decimals.toString().startsWith('ERROR:')) return decimals;
-      if (decimals.getType() !== 0)
-        return new StringValue('ERROR: ROUND second argument must be a number');
+      if (isError(decimals)) return decimals;
+      if (decimals.getType() !== CellValueType.NUMBER)
+        return makeError('ROUND second argument must be a number');
 
       return new NumberValue(Functions.round(value.toNumber(), decimals.toNumber()));
     }
 
-    if (lowerName === 'abs') {
-      if (args.length !== 1) return new StringValue('ERROR: ABS requires exactly 1 argument');
-      const value = this.evaluateExpression(args[0], ctx);
-      if (value.getType() === 1 && value.toString().startsWith('ERROR:')) return value;
-      if (value.getType() !== 0) return new StringValue('ERROR: ABS argument must be a number');
-      return new NumberValue(Functions.abs(value.toNumber()));
-    }
+    // Single-argument math functions: abs, floor, ceil
+    if (lowerName === 'abs') return this.evaluateSingleArgMath('ABS', args, ctx, Functions.abs);
+    if (lowerName === 'floor') return this.evaluateSingleArgMath('FLOOR', args, ctx, Functions.floor);
+    if (lowerName === 'ceil') return this.evaluateSingleArgMath('CEIL', args, ctx, Functions.ceil);
 
-    if (lowerName === 'floor') {
-      if (args.length !== 1) return new StringValue('ERROR: FLOOR requires exactly 1 argument');
-      const value = this.evaluateExpression(args[0], ctx);
-      if (value.getType() === 1 && value.toString().startsWith('ERROR:')) return value;
-      if (value.getType() !== 0) return new StringValue('ERROR: FLOOR argument must be a number');
-      return new NumberValue(Functions.floor(value.toNumber()));
-    }
-
-    if (lowerName === 'ceil') {
-      if (args.length !== 1) return new StringValue('ERROR: CEIL requires exactly 1 argument');
-      const value = this.evaluateExpression(args[0], ctx);
-      if (value.getType() === 1 && value.toString().startsWith('ERROR:')) return value;
-      if (value.getType() !== 0) return new StringValue('ERROR: CEIL argument must be a number');
-      return new NumberValue(Functions.ceil(value.toNumber()));
-    }
-
+    // if(condition, trueVal, falseVal)
     if (lowerName === 'if') {
-      if (args.length !== 3) return new StringValue('ERROR: IF requires exactly 3 arguments');
+      if (args.length !== 3) return makeError('IF requires exactly 3 arguments');
       const condition = this.evaluateExpression(args[0], ctx);
-      if (condition.getType() === 1 && condition.toString().startsWith('ERROR:')) return condition;
+      if (isError(condition)) return condition;
       return condition.toBoolean()
         ? this.evaluateExpression(args[1], ctx)
         : this.evaluateExpression(args[2], ctx);
     }
 
-    return new StringValue('ERROR: Unknown function: ' + name);
+    return makeError('Unknown function: ' + name);
+  }
+
+  private evaluateSingleArgMath(
+    funcName: string,
+    args: Expression[],
+    ctx: EvaluationContext,
+    fn: (v: f64) => f64,
+  ): CellValue {
+    if (args.length !== 1) return makeError(funcName + ' requires exactly 1 argument');
+    const value = this.evaluateExpression(args[0], ctx);
+    if (isError(value)) return value;
+    if (value.getType() !== CellValueType.NUMBER) return makeError(funcName + ' argument must be a number');
+    return new NumberValue(fn(value.toNumber()));
   }
 
   private evaluateAggregation(
@@ -410,12 +404,12 @@ export class Evaluator {
     ctx: EvaluationContext,
   ): CellValue {
     if (args.length !== 1) {
-      return new StringValue('ERROR: ' + funcName.toUpperCase() + ' requires exactly 1 argument');
+      return makeError(funcName.toUpperCase() + ' requires exactly 1 argument');
     }
 
     if (!(args[0] instanceof ColumnRefExpression)) {
-      return new StringValue(
-        'ERROR: ' + funcName.toUpperCase() + ' argument must be a column name',
+      return makeError(
+        funcName.toUpperCase() + ' argument must be a column name',
       );
     }
 
@@ -424,7 +418,7 @@ export class Evaluator {
     const lowerName = columnName.toLowerCase();
 
     if (!ctx.columnIndices.has(lowerName)) {
-      return new StringValue('ERROR: Column ' + columnName + ' not found');
+      return makeError('Column ' + columnName + ' not found');
     }
 
     const index = ctx.columnIndices.get(lowerName);
@@ -448,27 +442,28 @@ export class Evaluator {
       return new NumberValue(Functions.max(values));
     }
 
-    return new StringValue('ERROR: Unknown aggregation function: ' + funcName);
+    return makeError('Unknown aggregation function: ' + funcName);
   }
 
   private valuesEqual(left: CellValue, right: CellValue): bool {
     if (left.getType() !== right.getType()) return false;
 
     const type = left.getType();
-    if (type === 0) return left.toNumber() === right.toNumber();
-    if (type === 1) return left.toString() === right.toString();
-    if (type === 2) return left.toBoolean() === right.toBoolean();
-    if (type === 3) return true; // both null
+    if (type === CellValueType.NUMBER) return left.toNumber() === right.toNumber();
+    if (type === CellValueType.STRING) return left.toString() === right.toString();
+    if (type === CellValueType.BOOLEAN) return left.toBoolean() === right.toBoolean();
+    if (type === CellValueType.NULL) return true;
 
     return false;
   }
 
   private typeName(value: CellValue): string {
     const type = value.getType();
-    if (type === 0) return 'number';
-    if (type === 1) return 'string';
-    if (type === 2) return 'boolean';
-    if (type === 3) return 'null';
+    if (type === CellValueType.NUMBER) return 'number';
+    if (type === CellValueType.STRING) return 'string';
+    if (type === CellValueType.BOOLEAN) return 'boolean';
+    if (type === CellValueType.NULL) return 'null';
+    if (type === CellValueType.ERROR) return 'error';
     return 'unknown';
   }
 

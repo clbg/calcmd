@@ -10,6 +10,7 @@ import {
   LabelLocation,
   DependencyGraph,
   CellValue,
+  CellValueType,
   NullValue,
 } from './types';
 import { parseValue, isValidIdentifier } from './utils';
@@ -62,7 +63,7 @@ export class Parser {
       const row = rows[rowIndex];
       for (let c = 0; c < row.cells.length; c++) {
         const cell = row.cells[c];
-        if (cell.value.getType() === 1) {
+        if (cell.value.getType() === CellValueType.STRING) {
           // string
           const labelMatch = this.extractLabel(cell.value.toString());
           if (labelMatch !== null) {

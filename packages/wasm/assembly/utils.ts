@@ -1,9 +1,41 @@
 // CalcMD WASM Utilities
 // Helper functions for value parsing and formatting
 
-import { CellValue, NumberValue, StringValue, BooleanValue, NullValue } from './types';
+import { CellValue, CellValueType, ErrorValue, NumberValue, StringValue, BooleanValue, NullValue } from './types';
 
 export const DISPLAY_PRECISION: i32 = 6;
+
+// --- Error Utilities ---
+
+export function isError(v: CellValue): bool {
+  return v instanceof ErrorValue;
+}
+
+export function makeError(msg: string): ErrorValue {
+  return new ErrorValue(msg);
+}
+
+// --- Character Classification (shared by parser + formula-parser) ---
+
+export function isAlpha(code: i32): bool {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+export function isAlphaNumeric(code: i32): bool {
+  return isAlpha(code) || isDigit(code);
+}
+
+export function isAlphaOrUnderscore(code: i32): bool {
+  return isAlpha(code) || code === 95;
+}
+
+export function isAlphaNumericOrUnderscore(code: i32): bool {
+  return isAlphaOrUnderscore(code) || isDigit(code) || code === 64; // 64 = '@'
+}
+
+export function isDigit(code: i32): bool {
+  return code >= 48 && code <= 57;
+}
 
 // Value parsing (domain-specific, keep)
 export function parseValue(str: string): CellValue {
@@ -42,18 +74,15 @@ export function parseValue(str: string): CellValue {
 export function formatValue(v: CellValue): string {
   const type = v.getType();
 
-  if (type === 3) {
-    // null
+  if (type === CellValueType.NULL) {
     return '';
   }
 
-  if (type === 2) {
-    // boolean
+  if (type === CellValueType.BOOLEAN) {
     return v.toBoolean() ? 'true' : 'false';
   }
 
-  if (type === 0) {
-    // number
+  if (type === CellValueType.NUMBER) {
     const num = v.toNumber();
     return formatNumber(num, DISPLAY_PRECISION);
   }
@@ -92,18 +121,6 @@ export function isValidIdentifier(s: string): bool {
   }
 
   return true;
-}
-
-function isAlpha(code: i32): bool {
-  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
-}
-
-function isAlphaNumeric(code: i32): bool {
-  return isAlpha(code) || (code >= 48 && code <= 57);
-}
-
-export function isDigit(code: i32): bool {
-  return code >= 48 && code <= 57;
 }
 
 // Cell ID generation (domain-specific, keep)

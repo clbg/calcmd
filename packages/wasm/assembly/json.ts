@@ -1,6 +1,6 @@
 // Simple JSON serialization for ParsedTable
 
-import { ParsedTable, CellValue } from './types';
+import { ParsedTable, CellValue, CellValueType } from './types';
 
 export function serializeTable(table: ParsedTable): string {
   let json = '{';
@@ -83,23 +83,19 @@ export function serializeTable(table: ParsedTable): string {
 function serializeValue(value: CellValue): string {
   const type = value.getType();
 
-  if (type === 3) {
-    // null
+  if (type === CellValueType.NULL || type === CellValueType.ERROR) {
     return 'null';
   }
 
-  if (type === 2) {
-    // boolean
+  if (type === CellValueType.BOOLEAN) {
     return value.toBoolean() ? 'true' : 'false';
   }
 
-  if (type === 0) {
-    // number
+  if (type === CellValueType.NUMBER) {
     return value.toNumber().toString();
   }
 
-  if (type === 1) {
-    // string
+  if (type === CellValueType.STRING) {
     return '"' + escapeString(value.toString()) + '"';
   }
 

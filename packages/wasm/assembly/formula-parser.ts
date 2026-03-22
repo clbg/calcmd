@@ -13,7 +13,7 @@ import {
   StringValue,
   BooleanValue,
 } from './types';
-import { isDigit } from './utils';
+import { isDigit, isAlphaOrUnderscore, isAlphaNumericOrUnderscore } from './utils';
 
 class Token {
   type: string;
@@ -140,10 +140,10 @@ export class FormulaParser {
       }
 
       // Identifiers (column names, function names, keywords)
-      if (this.isAlphaOrUnderscore(code) || code === 64) {
+      if (isAlphaOrUnderscore(code) || code === 64) {
         // @ symbol
         let ident = '';
-        while (i < formula.length && this.isAlphaNumericOrUnderscore(formula.charCodeAt(i))) {
+        while (i < formula.length && isAlphaNumericOrUnderscore(formula.charCodeAt(i))) {
           ident += formula.charAt(i);
           i++;
         }
@@ -165,14 +165,6 @@ export class FormulaParser {
     }
 
     return tokens;
-  }
-
-  private isAlphaOrUnderscore(code: i32): bool {
-    return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95;
-  }
-
-  private isAlphaNumericOrUnderscore(code: i32): bool {
-    return this.isAlphaOrUnderscore(code) || (code >= 48 && code <= 57) || code === 64;
   }
 
   private parseExpression(): Expression {

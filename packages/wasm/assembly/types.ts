@@ -3,6 +3,15 @@
 
 // AssemblyScript doesn't support union types, so we use classes with inheritance
 
+// --- Cell Value Type Constants ---
+export namespace CellValueType {
+  export const NUMBER: u8 = 0;
+  export const STRING: u8 = 1;
+  export const BOOLEAN: u8 = 2;
+  export const NULL: u8 = 3;
+  export const ERROR: u8 = 4;
+}
+
 // --- Cell Value Types ---
 
 // Base class for all cell values
@@ -22,8 +31,8 @@ export class NumberValue extends CellValue {
   }
 
   getType(): u8 {
-    return 0;
-  } // 0 = number
+    return CellValueType.NUMBER;
+  }
   toString(): string {
     return this.value.toString();
   }
@@ -44,8 +53,8 @@ export class StringValue extends CellValue {
   }
 
   getType(): u8 {
-    return 1;
-  } // 1 = string
+    return CellValueType.STRING;
+  }
   toString(): string {
     return this.value;
   }
@@ -66,8 +75,8 @@ export class BooleanValue extends CellValue {
   }
 
   getType(): u8 {
-    return 2;
-  } // 2 = boolean
+    return CellValueType.BOOLEAN;
+  }
   toString(): string {
     return this.value ? 'true' : 'false';
   }
@@ -81,10 +90,32 @@ export class BooleanValue extends CellValue {
 
 export class NullValue extends CellValue {
   getType(): u8 {
-    return 3;
-  } // 3 = null
+    return CellValueType.NULL;
+  }
   toString(): string {
     return '';
+  }
+  toNumber(): f64 {
+    return 0.0;
+  }
+  toBoolean(): bool {
+    return false;
+  }
+}
+
+export class ErrorValue extends CellValue {
+  message: string;
+
+  constructor(message: string) {
+    super();
+    this.message = message;
+  }
+
+  getType(): u8 {
+    return CellValueType.ERROR;
+  }
+  toString(): string {
+    return this.message;
   }
   toNumber(): f64 {
     return 0.0;
@@ -191,6 +222,17 @@ export class ParsedTable extends Table {
 
 // --- Expression AST ---
 
+// Expression type constants
+export namespace ExprType {
+  export const LITERAL: u8 = 0;
+  export const COLUMN_REF: u8 = 1;
+  export const LABEL_REF: u8 = 2;
+  export const BINARY: u8 = 3;
+  export const UNARY: u8 = 4;
+  export const FUNCTION_CALL: u8 = 5;
+  export const PAREN: u8 = 6;
+}
+
 export abstract class Expression {
   abstract getType(): u8;
 }
@@ -204,7 +246,7 @@ export class LiteralExpression extends Expression {
   }
 
   getType(): u8 {
-    return 0;
+    return ExprType.LITERAL;
   }
 }
 
@@ -217,7 +259,7 @@ export class ColumnRefExpression extends Expression {
   }
 
   getType(): u8 {
-    return 1;
+    return ExprType.COLUMN_REF;
   }
 }
 
@@ -230,7 +272,7 @@ export class LabelRefExpression extends Expression {
   }
 
   getType(): u8 {
-    return 2;
+    return ExprType.LABEL_REF;
   }
 }
 
@@ -247,7 +289,7 @@ export class BinaryExpression extends Expression {
   }
 
   getType(): u8 {
-    return 3;
+    return ExprType.BINARY;
   }
 }
 
@@ -262,7 +304,7 @@ export class UnaryExpression extends Expression {
   }
 
   getType(): u8 {
-    return 4;
+    return ExprType.UNARY;
   }
 }
 
@@ -277,7 +319,7 @@ export class FunctionCallExpression extends Expression {
   }
 
   getType(): u8 {
-    return 5;
+    return ExprType.FUNCTION_CALL;
   }
 }
 
@@ -290,6 +332,6 @@ export class ParenExpression extends Expression {
   }
 
   getType(): u8 {
-    return 6;
+    return ExprType.PAREN;
   }
 }

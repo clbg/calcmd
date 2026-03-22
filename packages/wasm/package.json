@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "CalcMD WebAssembly implementation - verifiable calculations in markdown tables",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./wasm": "./build/release.wasm"
   },
@@ -23,7 +23,8 @@
     "asbuild:debug": "asc assembly/index.ts --target debug",
     "asbuild:release": "asc assembly/index.ts --target release",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release",
-    "build": "npm run asbuild",
+    "build:wrapper": "tsup",
+    "build": "npm run asbuild && npm run build:wrapper",
     "test": "npm run test:all",
     "test:unit": "node tests/unit.test.mjs",
     "test:compare": "node tests/compare.test.mjs",
@@ -55,7 +56,9 @@
     "url": "https://github.com/clbg/calcmd/issues"
   },
   "devDependencies": {
+    "@calcmd/core": "workspace:*",
     "assemblyscript": "^0.27.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.0.0"
   },
   "type": "module",

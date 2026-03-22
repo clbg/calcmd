@@ -1,41 +1,6 @@
 // Comprehensive test comparing WASM and TypeScript implementations
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import loader from '@assemblyscript/loader';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Import TypeScript version
 import { calcmd as calcmdTS } from '../../core/dist/index.js';
-
-let wasmModule;
-let calcmdWASM;
-
-async function setup() {
-  // Load WASM module
-  const wasmPath = path.join(__dirname, '../build/release.wasm');
-  wasmModule = await loader.instantiate(
-    fs.promises.readFile(wasmPath),
-    {
-      env: {
-        abort: (msg, file, line, col) => {
-          const msgStr = msg ? wasmModule.exports.__getString(msg) : 'unknown';
-          const fileStr = file ? wasmModule.exports.__getString(file) : 'unknown';
-          console.error(`WASM abort: ${msgStr} at ${fileStr}:${line}:${col}`);
-        }
-      }
-    }
-  );
-  
-  calcmdWASM = (markdown) => {
-    const { __newString, __getString } = wasmModule.exports;
-    const inputPtr = __newString(markdown);
-    const resultPtr = wasmModule.exports.calcmd(inputPtr);
-    const result = __getString(resultPtr);
-    return JSON.parse(result);
-  };
-}
+import { calcmd as calcmdWASM } from '../dist/index.js';
 
 function compareResults(name, markdown, tsResult, wasmResult) {
   console.log(`\n=== Test: ${name} ===`);
@@ -133,8 +98,6 @@ function compareResults(name, markdown, tsResult, wasmResult) {
 }
 
 async function runTests() {
-  await setup();
-  
   console.log('Starting comprehensive WASM vs TypeScript comparison tests...\n');
   
   const tests = [
