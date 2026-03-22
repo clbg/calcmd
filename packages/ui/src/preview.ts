@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -22,35 +22,6 @@ function cellId(row: number, col: number): string {
   return `R${row}.C${col}`;
 }
 
-const ROLE_STYLES: Record<NonNullable<CellRole>, Record<string, string>> = {
-  selected: {
-    outline: '2px solid var(--highlight-selected)',
-    outlineOffset: '-2px',
-    background: 'rgba(167,139,250,0.12)',
-  },
-  input: {
-    outline: '2px solid #3fb950',
-    outlineOffset: '-2px',
-    background: 'rgba(63,185,80,0.10)',
-  },
-  dependent: {
-    outline: '2px solid rgba(210,153,34,0.9)',
-    outlineOffset: '-2px',
-    background: 'rgba(210,153,34,0.10)',
-  },
-};
-
-const HEADER_ROLE_STYLES: Record<NonNullable<CellRole>, Record<string, string>> = {
-  selected: {
-    borderBottom: '3px solid var(--highlight-selected)',
-    background: 'rgba(167,139,250,0.12)',
-  },
-  input: { borderBottom: '3px solid #3fb950', background: 'rgba(63,185,80,0.10)' },
-  dependent: {
-    borderBottom: '3px solid rgba(210,153,34,0.9)',
-    background: 'rgba(210,153,34,0.10)',
-  },
-};
 
 @customElement('calcmd-preview')
 export class CalcMDPreview extends LitElement {
@@ -58,6 +29,14 @@ export class CalcMDPreview extends LitElement {
   @property({ type: Object }) selectedCell: { row: number; col: number } | null = null;
 
   @state() private selectedCol: number | null = null;
+  @state() private animationKey: number = 0;
+
+  override willUpdate(changedProperties: PropertyValues) {
+    super.willUpdate(changedProperties);
+    if (changedProperties.has('selectedCell') || changedProperties.has('selectedCol')) {
+      this.animationKey++;
+    }
+  }
 
   static styles = css`
     :host {
@@ -87,9 +66,12 @@ export class CalcMDPreview extends LitElement {
       z-index: 1;
       white-space: nowrap;
       cursor: pointer;
+      overflow: hidden;
     }
 
     .header-content {
+      position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
@@ -107,6 +89,8 @@ export class CalcMDPreview extends LitElement {
     }
 
     .preview-cell {
+      position: relative;
+      overflow: hidden;
       border-bottom: 1px solid var(--border, #30363d);
       padding: 0.6rem 1rem;
       cursor: pointer;
@@ -115,10 +99,12 @@ export class CalcMDPreview extends LitElement {
     }
 
     .preview-cell:hover {
-      background: rgba(167, 139, 250, 0.05);
+      background: rgba(167, 139, 250, 0.05); /* base subtle hover */
     }
 
     .cell-content {
+      position: relative;
+      z-index: 1; /* Keep text above the ambient blur */
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -165,11 +151,105 @@ export class CalcMDPreview extends LitElement {
       color: var(--accent, #58a6ff);
       font-weight: 600;
     }
+
+    /* --- Ambient Blurred Flow & Highlights --- */
+    .role-selected, .role-input, .role-dependent {
+      outline-offset: -2px;
+    }
+
+    .role-selected {
+      outline: 1.5px solid rgba(167, 139, 250, 0.4);
+      background-color: rgba(167, 139, 250, 0.04);
+    }
+    .role-input {
+      outline: 1.5px solid rgba(63, 185, 80, 0.4);
+      background-color: rgba(63, 185, 80, 0.04);
+    }
+    .role-dependent {
+      outline: 1.5px solid rgba(210,153,34,0.4);
+      background-color: rgba(210, 153, 34, 0.04);
+    }
+
+    .header-role-selected {
+      border-bottom: 3px solid rgba(167, 139, 250, 0.4);
+      background-color: rgba(167, 139, 250, 0.04);
+    }
+    .header-role-input {
+      border-bottom: 3px solid rgba(63, 185, 80, 0.4);
+      background-color: rgba(63, 185, 80, 0.04);
+    }
+    .header-role-dependent {
+      border-bottom: 3px solid rgba(210,153,34,0.4);
+      background-color: rgba(210, 153, 34, 0.04);
+    }
+
+    /* Ambient Blur Particle */
+    .role-selected::before,
+    .role-input::before,
+    .role-dependent::before,
+    .header-role-selected::before,
+    .header-role-input::before,
+    .header-role-dependent::before {
+      content: '';
+      position: absolute;
+      top: 0; 
+      left: -100%;
+      width: 100%; 
+      height: 100%;
+      filter: blur(8px);
+      animation-duration: 3.5s;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .anim-0 .role-selected::before, .anim-0 .role-input::before, .anim-0 .role-dependent::before,
+    .anim-0 .header-role-selected::before, .anim-0 .header-role-input::before, .anim-0 .header-role-dependent::before {
+      animation-name: ambient-flow-0;
+    }
+    .anim-1 .role-selected::before, .anim-1 .role-input::before, .anim-1 .role-dependent::before,
+    .anim-1 .header-role-selected::before, .anim-1 .header-role-input::before, .anim-1 .header-role-dependent::before {
+      animation-name: ambient-flow-1;
+    }
+
+    .role-input::before,
+    .header-role-input::before {
+      background: linear-gradient(90deg, transparent, rgba(63, 185, 80, 0.05) 30%, rgba(63, 185, 80, 0.3) 50%, rgba(63, 185, 80, 0.05) 70%, transparent);
+      animation-delay: 0s;
+    }
+    .role-selected::before,
+    .header-role-selected::before {
+      background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.05) 30%, rgba(167, 139, 250, 0.3) 50%, rgba(167, 139, 250, 0.05) 70%, transparent);
+      animation-delay: 0.6s;
+    }
+    .role-dependent::before,
+    .header-role-dependent::before {
+      background: linear-gradient(90deg, transparent, rgba(210, 153, 34, 0.05) 30%, rgba(210, 153, 34, 0.3) 50%, rgba(210, 153, 34, 0.05) 70%, transparent);
+      animation-delay: 1.2s;
+    }
+
+    @keyframes ambient-flow-0 {
+      0% { left: -100%; opacity: 0; }
+      5% { opacity: 1; }
+      40% { left: 150%; opacity: 1; } /* rapid, linear sweep taking 1.4s */
+      45% { opacity: 0; left: 150%; }
+      100% { left: 150%; opacity: 0; } /* long pause before next round */
+    }
+    @keyframes ambient-flow-1 {
+      0% { left: -100%; opacity: 0; }
+      5% { opacity: 1; }
+      40% { left: 150%; opacity: 1; }
+      45% { opacity: 0; left: 150%; }
+      100% { left: 150%; opacity: 0; }
+    }
   `;
 
   private get reverseDeps(): Map<string, Set<string>> {
     return this.table ? buildReverseDeps(this.table) : new Map();
   }
+
+
 
   private get cellRoleMap(): Map<string, CellRole> {
     const map = new Map<string, CellRole>();
@@ -232,7 +312,7 @@ export class CalcMDPreview extends LitElement {
     this.dispatchEvent(new CustomEvent('cell-click', { detail: { row, col } }));
   }
 
-  private getCellClasses(rowIndex: number, colIndex: number): Record<string, boolean> {
+  private getCellClasses(rowIndex: number, colIndex: number, role: CellRole): Record<string, boolean> {
     if (!this.table) {
       return {
         'preview-cell': true,
@@ -255,6 +335,9 @@ export class CalcMDPreview extends LitElement {
       'has-agg': hasAgg,
       'has-error': !!cell.error,
       'label-row': isLabelRow,
+      'role-selected': role === 'selected',
+      'role-input': role === 'input',
+      'role-dependent': role === 'dependent',
     };
   }
 
@@ -277,17 +360,21 @@ export class CalcMDPreview extends LitElement {
     }
 
     return html`
-      <div class="preview-container">
+      <div class="preview-container anim-${this.animationKey % 2}">
         <table class="preview-table">
           <thead>
             <tr>
               ${this.table.columns.map((col: (typeof this.table.columns)[0], i: number) => {
                 const role = this.selectedCol !== null ? (this.colRoleMap.get(i) ?? null) : null;
-                const styles = role ? HEADER_ROLE_STYLES[role] : {};
                 return html`
                   <th
-                    class="preview-header"
-                    style=${styleMap({ cursor: 'pointer', ...styles })}
+                    class=${classMap({
+                      'preview-header': true,
+                      'header-role-selected': role === 'selected',
+                      'header-role-input': role === 'input',
+                      'header-role-dependent': role === 'dependent',
+                    })}
+                    style="cursor: pointer;"
                     @click=${() => this.handleColClick(i)}
                     title=${col.formula ? `Column formula: ${col.formula}` : nothing}
                   >
@@ -311,13 +398,11 @@ export class CalcMDPreview extends LitElement {
                       this.selectedCol !== null
                         ? null
                         : (this.cellRoleMap.get(cellId(rowIndex, colIndex)) ?? null);
-                    const styles = role ? ROLE_STYLES[role] : {};
                     return html`
                       <td
-                        class=${classMap(this.getCellClasses(rowIndex, colIndex))}
+                        class=${classMap(this.getCellClasses(rowIndex, colIndex, role))}
                         title=${this.getCellTitle(rowIndex, colIndex)}
                         @click=${() => this.handleCellClick(rowIndex, colIndex)}
-                        style=${styleMap(styles)}
                       >
                         <div class="cell-content">
                           ${cell.error
