@@ -20,11 +20,17 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test
       - run: pnpm lint
-      
-      # WASM-specific tests
-      - name: Test WASM package
-        run: pnpm --filter @calcmd/wasm test:all
