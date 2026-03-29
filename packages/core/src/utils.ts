@@ -3,7 +3,7 @@
 // format() — align markdown table columns (CJK-aware)
 // fill()   — rewrite formula cells with their computed values
 
-import type { ParsedTable, CellValue } from './types';
+import type { ParsedTable, CellValue } from './types.js';
 
 // --- constants ---
 

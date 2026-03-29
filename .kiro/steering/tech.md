@@ -2,25 +2,28 @@
 
 ## Core Library (`@calcmd/core`)
 
-- TypeScript 5, targeting ES2020, CommonJS output
-- Jest + ts-jest for testing
-- Strict mode enabled (`"strict": true` in tsconfig)
-- No runtime dependencies — pure TypeScript
+- Rust + WebAssembly via wasm-pack (`--target bundler`)
+- TypeScript wrapper via tsup (JS) + tsc (types)
+- Pure TS utilities: `format()`, `fill()`, `formatValue()` in `src/utils.ts`
+- Node.js integration tests (`.mjs`) — no Jest
+- Rust deps: wasm-bindgen, pest, petgraph, serde, serde_json
+- Build: `wasm-pack build --target bundler --out-dir pkg` then `tsup && tsc --emitDeclarationOnly`
 
 ## UI Components (`@calcmd/ui`)
 
 - React 18 with TypeScript 5
-- Pure component library (Editor, Preview, examples)
+- Lit web components (Editor, Preview)
 - No build step — consumed as source by website via Vite alias
 - Depends on `@calcmd/core` via workspace reference (`workspace:*`)
 
 ## Website (`@calcmd/website`)
 
 - React 18 with TypeScript 5
-- Vite 5 + @vitejs/plugin-react
+- Vite 5 + @vitejs/plugin-react + vite-plugin-wasm
+- `build.target: 'esnext'` required for WASM ESM support
 - React Router for `/` (landing) and `/playground` routes
-- Imports `@calcmd/core` for live demo and `@calcmd/ui` for playground components
 - `vite.config.ts` sets `base: '/calcmd/'` for GitHub Pages subpath
+- `@calcmd/core` resolves via workspace dependency (dist/), not source alias
 
 ## Package Management
 
@@ -41,9 +44,8 @@ pnpm install
 ### Core library
 
 ```bash
-pnpm --filter @calcmd/core build   # tsc compile → dist/
-pnpm --filter @calcmd/core dev     # tsc --watch (ESM)
-pnpm --filter @calcmd/core test    # jest
+pnpm --filter @calcmd/core build   # wasm-pack + tsup + tsc → dist/ and pkg/
+pnpm --filter @calcmd/core test    # node tests/basic.test.mjs (19 tests)
 ```
 
 ### Website (includes playground)
@@ -57,19 +59,20 @@ pnpm --filter @calcmd/website preview
 ### Root-level shortcuts
 
 ```bash
-pnpm build          # build core
-pnpm dev            # build core then start core watch + website dev
-pnpm build:website  # build core then build website for deployment
+pnpm build          # build core (wasm + wrapper)
 pnpm test           # run core tests
+pnpm build:website  # build core then build website for deployment
 ```
 
 ### Typical dev workflow
 
 ```bash
-pnpm dev    # one command: core watch + website dev server in parallel
+pnpm build                          # build core first
+pnpm --filter @calcmd/website dev   # start website dev server
 ```
 
 ## Output
 
-- Core compiles to `packages/core/dist/`
-- Entry point: `dist/index.js`, types: `dist/index.d.ts`
+- Core WASM: `packages/core/pkg/` (wasm-pack output, bundler target)
+- Core JS wrapper: `packages/core/dist/index.js`
+- Core types: `packages/core/dist/index.d.ts`

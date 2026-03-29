@@ -2,13 +2,10 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "pkg/**"]
     },
     "@calcmd/ui#build": {
       "outputs": []
-    },
-    "@calcmd/wasm#build": {
-      "outputs": ["build/**"]
     },
     "dev": {
       "dependsOn": ["^build"],

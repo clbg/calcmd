@@ -1,36 +1,29 @@
 {
   "name": "@calcmd/core",
   "version": "0.1.0",
-  "description": "Verifiable calculations in markdown tables - parser and evaluator for CalcMD specification",
+  "description": "Verifiable calculations in markdown tables - Rust/WASM implementation of CalcMD",
   "main": "dist/index.js",
-  "module": "dist/esm/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist",
+    "pkg",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.esm.json",
-    "test": "jest",
-    "dev": "tsc --watch -p tsconfig.esm.json",
-    "prepublishOnly": "pnpm test && pnpm build"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "globals": {
-      "ts-jest": {
-        "tsconfig": "tsconfig.test.json"
-      }
-    }
+    "build:wasm": "$HOME/.cargo/bin/wasm-pack build --target bundler --out-dir pkg || wasm-pack build --target bundler --out-dir pkg",
+    "build:wrapper": "tsup && tsc --emitDeclarationOnly --noEmit false",
+    "build": "npm run build:wasm && npm run build:wrapper",
+    "test": "node tests/basic.test.mjs",
+    "dev": "tsup --watch"
   },
   "keywords": [
     "calcmd",
@@ -38,13 +31,9 @@
     "table",
     "formula",
     "calculator",
-    "spreadsheet",
-    "ai",
-    "llm",
-    "verifiable",
-    "calculations",
-    "parser",
-    "evaluator"
+    "wasm",
+    "webassembly",
+    "rust"
   ],
   "author": "CalcMD Team",
   "license": "MIT",
@@ -58,10 +47,8 @@
     "url": "https://github.com/clbg/calcmd/issues"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "^25.5.0",
-    "jest": "^30.3.0",
-    "ts-jest": "^29.0.0",
+    "tsup": "^8.5.1",
     "typescript": "^6.0.2"
-  }
+  },
+  "type": "module"
 }

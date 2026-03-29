@@ -6,7 +6,7 @@ This document describes the Rust implementation of CalcMD WASM.
 
 The Rust implementation follows the same pipeline as the TypeScript version but leverages Rust's type system and performance characteristics.
 
-### Module Structure
+## Module Structure
 
 ```
 src/
@@ -16,7 +16,7 @@ src/
 ├── formula_parser.rs   # Formula expression parser
 ├── formula.pest        # Pest grammar definition
 ├── evaluator.rs        # Main evaluation engine
-├── index.ts            # TypeScript wrapper
+├── index.ts            # TypeScript wrapper (normalizes JSON output)
 └── types.ts            # TypeScript type definitions
 ```
 
@@ -177,18 +177,19 @@ node tests/rust-basic.test.mjs
 ### WASM Build
 
 ```bash
-wasm-pack build --target web --out-dir pkg
+wasm-pack build --target bundler --out-dir pkg
 ```
 
 This generates:
-- `pkg/calcmd_wasm_bg.wasm` - WASM binary
-- `pkg/calcmd_wasm.js` - JavaScript loader
+- `pkg/calcmd_wasm_bg.wasm` - WASM binary (~270KB release)
+- `pkg/calcmd_wasm.js` - Static ESM import (handled by bundler)
+- `pkg/calcmd_wasm_bg.js` - Low-level bindings
 - `pkg/calcmd_wasm.d.ts` - TypeScript definitions
 
 ### TypeScript Wrapper
 
 ```bash
-tsup
+tsup && tsc --emitDeclarationOnly --noEmit false
 ```
 
 This generates:
