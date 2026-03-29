@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Auto Prune Remote Branches",
+  "description": "Automatically runs 'git fetch --prune' after agent stops to clean up deleted remote branch references",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "git fetch --prune",
+    "timeout": 30
+  }
+}
