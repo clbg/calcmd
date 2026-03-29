@@ -38,3 +38,18 @@ For any non-trivial task (new feature, migration, refactor), write a task doc **
 4. When done, rename to `docs/task-<slug>.md` (drop `.WIP`)
 
 The task doc stays in the repo as a permanent record of why decisions were made.
+
+## npm Release Process
+
+npm publishing is triggered by pushing a version tag. The npm Trusted Publisher connection is already configured — no token setup needed.
+
+```bash
+# 1. Bump version in packages/core/package.json
+# 2. Commit, tag, and push:
+git add packages/core/package.json
+git commit -m "chore: bump @calcmd/core to vX.Y.Z"
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The `Publish to npm` workflow triggers on `v*.*.*` tags and handles build + publish automatically. Do NOT add `NODE_AUTH_TOKEN` or modify the publish workflow — the OIDC Trusted Publisher connection handles auth.
