@@ -12,6 +12,9 @@ docs/           # Spec and planning documents
 ├── 05-Examples.md
 ├── 06-Roadmap.md
 ├── 07-Backlog.md
+├── 08-Decisions.md
+├── 09-Promotion-Strategy.md
+├── 10-Release-Process.md
 ├── poc-plan.md
 └── README.md
 packages/       # All code packages

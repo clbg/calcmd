@@ -131,8 +131,8 @@ export default function PlaygroundPage() {
             {error && (
               <div
                 style={{
-                  background: 'rgba(248,81,73,0.1)',
-                  border: '1px solid rgba(248,81,73,0.3)',
+                  background: 'rgba(166, 61, 47, 0.06)',
+                  border: '1px solid rgba(166, 61, 47, 0.2)',
                   color: 'var(--error)',
                   padding: '0.75rem 1rem',
                   margin: '0.75rem',
@@ -169,7 +169,7 @@ export default function PlaygroundPage() {
                     style={{
                       fontSize: '0.8rem',
                       color: 'var(--error)',
-                      fontFamily: '"SF Mono","Fira Code",monospace',
+                      fontFamily: 'var(--font-mono)',
                       padding: '0.3rem 0',
                     }}
                   >

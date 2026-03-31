@@ -35,4 +35,7 @@ Formulas appear in two places:
 
 ## Current State
 
-This repo contains the CalcMD specification (docs/04-Spec.md) and a working implementation across three packages: core (parser/evaluator), ui (React components), and website (landing page + playground).
+This repo contains the CalcMD specification (docs/04-Spec.md) and a Rust/WASM implementation:
+- **core** (Rust→WebAssembly + TypeScript wrapper) — parser/evaluator, used by the website playground
+- **ui** — Lit web components (Editor, Preview)
+- **website** — landing page + playground (warm design system: Source Serif 4 + terracotta palette)

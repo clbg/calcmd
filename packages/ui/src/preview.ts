@@ -22,7 +22,6 @@ function cellId(row: number, col: number): string {
   return `R${row}.C${col}`;
 }
 
-
 @customElement('calcmd-preview')
 export class CalcMDPreview extends LitElement {
   @property({ type: Object }) table?: ParsedTable;
@@ -52,12 +51,12 @@ export class CalcMDPreview extends LitElement {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.85rem;
-      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-family: var(--font-mono, 'SF Mono', 'Fira Code', monospace);
     }
 
     .preview-header {
-      background: #1c2128;
-      border-bottom: 1px solid var(--border, #30363d);
+      background: var(--surface, #f5f0e8);
+      border-bottom: 1px solid var(--border, #e4ddd0);
       padding: 0.6rem 1rem;
       text-align: left;
       font-weight: 500;
@@ -79,19 +78,19 @@ export class CalcMDPreview extends LitElement {
 
     .header-name {
       font-size: 0.85rem;
-      color: var(--muted, #8b949e);
+      color: var(--muted, #7a6e5d);
     }
 
     .header-formula {
       font-size: 0.78rem;
-      color: var(--formula-color, #58a6ff);
+      color: var(--formula-color, #b8632e);
       font-weight: normal;
     }
 
     .preview-cell {
       position: relative;
       overflow: hidden;
-      border-bottom: 1px solid var(--border, #30363d);
+      border-bottom: 1px solid var(--border, #e4ddd0);
       padding: 0.6rem 1rem;
       cursor: pointer;
       transition: background 0.1s;
@@ -99,7 +98,7 @@ export class CalcMDPreview extends LitElement {
     }
 
     .preview-cell:hover {
-      background: rgba(167, 139, 250, 0.05); /* base subtle hover */
+      background: rgba(184, 99, 46, 0.05); /* base subtle hover */
     }
 
     .cell-content {
@@ -120,7 +119,7 @@ export class CalcMDPreview extends LitElement {
     }
 
     .cell-formula-indicator {
-      color: var(--formula-color, #58a6ff);
+      color: var(--formula-color, #b8632e);
       font-weight: bold;
       font-size: 0.7rem;
       flex-shrink: 0;
@@ -128,59 +127,61 @@ export class CalcMDPreview extends LitElement {
     }
 
     .cell-error {
-      color: var(--error, #f85149);
+      color: var(--error, #a63d2f);
       font-weight: 600;
     }
 
     .has-formula {
-      background: var(--formula-bg, #1c2d3f);
-      color: var(--formula-color, #58a6ff);
-      border-left: 2px solid var(--formula-border, #388bfd);
+      background: var(--formula-bg, rgba(184, 99, 46, 0.06));
+      color: var(--formula-color, #b8632e);
+      border-left: 2px solid var(--formula-border, #b8632e);
     }
 
     .has-formula:hover {
-      background: rgba(28, 45, 63, 0.8);
+      background: rgba(184, 99, 46, 0.1);
     }
 
     .has-error {
-      background: rgba(248, 81, 73, 0.08);
-      border-left: 2px solid var(--error, #f85149);
+      background: rgba(166, 61, 47, 0.06);
+      border-left: 2px solid var(--error, #a63d2f);
     }
 
     .label-row .preview-cell:first-child {
-      color: var(--accent, #58a6ff);
+      color: var(--accent, #b8632e);
       font-weight: 600;
     }
 
     /* --- Ambient Blurred Flow & Highlights --- */
-    .role-selected, .role-input, .role-dependent {
+    .role-selected,
+    .role-input,
+    .role-dependent {
       outline-offset: -2px;
     }
 
     .role-selected {
-      outline: 1.5px solid rgba(167, 139, 250, 0.4);
-      background-color: rgba(167, 139, 250, 0.04);
+      outline: 1.5px solid rgba(184, 99, 46, 0.4);
+      background-color: rgba(184, 99, 46, 0.04);
     }
     .role-input {
-      outline: 1.5px solid rgba(63, 185, 80, 0.4);
-      background-color: rgba(63, 185, 80, 0.04);
+      outline: 1.5px solid rgba(91, 122, 74, 0.4);
+      background-color: rgba(91, 122, 74, 0.04);
     }
     .role-dependent {
-      outline: 1.5px solid rgba(210,153,34,0.4);
-      background-color: rgba(210, 153, 34, 0.04);
+      outline: 1.5px solid rgba(184, 134, 46, 0.4);
+      background-color: rgba(184, 134, 46, 0.04);
     }
 
     .header-role-selected {
-      border-bottom: 3px solid rgba(167, 139, 250, 0.4);
-      background-color: rgba(167, 139, 250, 0.04);
+      border-bottom: 3px solid rgba(184, 99, 46, 0.4);
+      background-color: rgba(184, 99, 46, 0.04);
     }
     .header-role-input {
-      border-bottom: 3px solid rgba(63, 185, 80, 0.4);
-      background-color: rgba(63, 185, 80, 0.04);
+      border-bottom: 3px solid rgba(91, 122, 74, 0.4);
+      background-color: rgba(91, 122, 74, 0.04);
     }
     .header-role-dependent {
-      border-bottom: 3px solid rgba(210,153,34,0.4);
-      background-color: rgba(210, 153, 34, 0.04);
+      border-bottom: 3px solid rgba(184, 134, 46, 0.4);
+      background-color: rgba(184, 134, 46, 0.04);
     }
 
     /* Ambient Blur Particle */
@@ -192,9 +193,9 @@ export class CalcMDPreview extends LitElement {
     .header-role-dependent::before {
       content: '';
       position: absolute;
-      top: 0; 
+      top: 0;
       left: -100%;
-      width: 100%; 
+      width: 100%;
       height: 100%;
       filter: blur(8px);
       animation-duration: 3.5s;
@@ -204,52 +205,107 @@ export class CalcMDPreview extends LitElement {
       z-index: 0;
     }
 
-    .anim-0 .role-selected::before, .anim-0 .role-input::before, .anim-0 .role-dependent::before,
-    .anim-0 .header-role-selected::before, .anim-0 .header-role-input::before, .anim-0 .header-role-dependent::before {
+    .anim-0 .role-selected::before,
+    .anim-0 .role-input::before,
+    .anim-0 .role-dependent::before,
+    .anim-0 .header-role-selected::before,
+    .anim-0 .header-role-input::before,
+    .anim-0 .header-role-dependent::before {
       animation-name: ambient-flow-0;
     }
-    .anim-1 .role-selected::before, .anim-1 .role-input::before, .anim-1 .role-dependent::before,
-    .anim-1 .header-role-selected::before, .anim-1 .header-role-input::before, .anim-1 .header-role-dependent::before {
+    .anim-1 .role-selected::before,
+    .anim-1 .role-input::before,
+    .anim-1 .role-dependent::before,
+    .anim-1 .header-role-selected::before,
+    .anim-1 .header-role-input::before,
+    .anim-1 .header-role-dependent::before {
       animation-name: ambient-flow-1;
     }
 
     .role-input::before,
     .header-role-input::before {
-      background: linear-gradient(90deg, transparent, rgba(63, 185, 80, 0.05) 30%, rgba(63, 185, 80, 0.3) 50%, rgba(63, 185, 80, 0.05) 70%, transparent);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(91, 122, 74, 0.05) 30%,
+        rgba(91, 122, 74, 0.2) 50%,
+        rgba(91, 122, 74, 0.05) 70%,
+        transparent
+      );
       animation-delay: 0s;
     }
     .role-selected::before,
     .header-role-selected::before {
-      background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.05) 30%, rgba(167, 139, 250, 0.3) 50%, rgba(167, 139, 250, 0.05) 70%, transparent);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(184, 99, 46, 0.05) 30%,
+        rgba(184, 99, 46, 0.2) 50%,
+        rgba(184, 99, 46, 0.05) 70%,
+        transparent
+      );
       animation-delay: 0.6s;
     }
     .role-dependent::before,
     .header-role-dependent::before {
-      background: linear-gradient(90deg, transparent, rgba(210, 153, 34, 0.05) 30%, rgba(210, 153, 34, 0.3) 50%, rgba(210, 153, 34, 0.05) 70%, transparent);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(184, 134, 46, 0.05) 30%,
+        rgba(184, 134, 46, 0.2) 50%,
+        rgba(184, 134, 46, 0.05) 70%,
+        transparent
+      );
       animation-delay: 1.2s;
     }
 
     @keyframes ambient-flow-0 {
-      0% { left: -100%; opacity: 0; }
-      5% { opacity: 1; }
-      40% { left: 150%; opacity: 1; } /* rapid, linear sweep taking 1.4s */
-      45% { opacity: 0; left: 150%; }
-      100% { left: 150%; opacity: 0; } /* long pause before next round */
+      0% {
+        left: -100%;
+        opacity: 0;
+      }
+      5% {
+        opacity: 1;
+      }
+      40% {
+        left: 150%;
+        opacity: 1;
+      } /* rapid, linear sweep taking 1.4s */
+      45% {
+        opacity: 0;
+        left: 150%;
+      }
+      100% {
+        left: 150%;
+        opacity: 0;
+      } /* long pause before next round */
     }
     @keyframes ambient-flow-1 {
-      0% { left: -100%; opacity: 0; }
-      5% { opacity: 1; }
-      40% { left: 150%; opacity: 1; }
-      45% { opacity: 0; left: 150%; }
-      100% { left: 150%; opacity: 0; }
+      0% {
+        left: -100%;
+        opacity: 0;
+      }
+      5% {
+        opacity: 1;
+      }
+      40% {
+        left: 150%;
+        opacity: 1;
+      }
+      45% {
+        opacity: 0;
+        left: 150%;
+      }
+      100% {
+        left: 150%;
+        opacity: 0;
+      }
     }
   `;
 
   private get reverseDeps(): Map<string, Set<string>> {
     return this.table ? buildReverseDeps(this.table) : new Map();
   }
-
-
 
   private get cellRoleMap(): Map<string, CellRole> {
     const map = new Map<string, CellRole>();
@@ -312,7 +368,11 @@ export class CalcMDPreview extends LitElement {
     this.dispatchEvent(new CustomEvent('cell-click', { detail: { row, col } }));
   }
 
-  private getCellClasses(rowIndex: number, colIndex: number, role: CellRole): Record<string, boolean> {
+  private getCellClasses(
+    rowIndex: number,
+    colIndex: number,
+    role: CellRole,
+  ): Record<string, boolean> {
     if (!this.table) {
       return {
         'preview-cell': true,

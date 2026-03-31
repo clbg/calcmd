@@ -37,7 +37,16 @@ export default function LiveDemo() {
 
   return (
     <section id="demo" style={{ maxWidth: 860, margin: '0 auto', padding: '3rem 1.5rem' }}>
-      <div style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Live demo</div>
+      <h2
+        style={{
+          fontFamily: 'var(--font-heading)',
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          marginBottom: '0.5rem',
+        }}
+      >
+        Live demo
+      </h2>
       <p style={{ color: 'var(--muted)', marginBottom: '1.5rem' }}>
         Edit the markdown below — the table updates in real time using <code>@calcmd/core</code>.
       </p>
@@ -53,12 +62,12 @@ export default function LiveDemo() {
             style={{
               width: '100%',
               height: 240,
-              background: 'var(--surface)',
+              background: 'var(--surface-raised)',
               color: 'var(--text)',
               border: '1px solid var(--border)',
-              borderRadius: 8,
+              borderRadius: 'var(--radius-lg)',
               padding: '0.75rem 1rem',
-              fontFamily: '"SF Mono", "Fira Code", monospace',
+              fontFamily: 'var(--font-mono)',
               fontSize: '0.82rem',
               lineHeight: 1.6,
               resize: 'vertical',
@@ -74,9 +83,9 @@ export default function LiveDemo() {
           {result ? (
             <div
               style={{
-                background: 'var(--surface)',
+                background: 'var(--surface-raised)',
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 'var(--radius-lg)',
                 overflow: 'auto',
                 maxHeight: 240,
               }}
@@ -93,7 +102,7 @@ export default function LiveDemo() {
             </div>
           )}
           {result && result.errors.length > 0 && (
-            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#f85149' }}>
+            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--error)' }}>
               {result.errors.map((e, i) => (
                 <div key={i}>{e.message}</div>
               ))}

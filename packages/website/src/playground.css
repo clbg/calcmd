@@ -28,9 +28,9 @@
   padding: 0.75rem 1rem;
   border: none;
   outline: none;
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--text);
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.6;
   resize: none;
@@ -56,11 +56,11 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-mono);
 }
 
 .preview-header {
-  background: #1c2128;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 0.6rem 1rem;
   text-align: left;
@@ -92,12 +92,12 @@
   border-bottom: 1px solid var(--border);
   padding: 0.6rem 1rem;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.15s ease;
   white-space: nowrap;
 }
 
 .preview-cell:hover {
-  background: rgba(167, 139, 250, 0.05);
+  background: rgba(184, 99, 46, 0.05);
 }
 
 .cell-content {
@@ -122,33 +122,33 @@
 }
 
 .cell-error {
-  color: var(--error, #f85149);
+  color: var(--error);
   font-weight: 600;
 }
 
 .has-formula {
   background: var(--formula-bg);
-  color: var(--formula-color);
+  color: var(--accent);
   border-left: 2px solid var(--formula-border);
 }
 
 .has-formula:hover {
-  background: rgba(30, 27, 46, 0.8);
+  background: rgba(184, 99, 46, 0.1);
 }
 
 .has-formula.has-agg {
-  background: #1e1b2e;
-  color: var(--formula-color);
+  background: rgba(184, 99, 46, 0.08);
+  color: var(--accent);
   border-left: 2px solid var(--formula-border);
 }
 
 .has-error {
-  background: rgba(248, 81, 73, 0.08);
-  border-left: 2px solid var(--error, #f85149);
+  background: rgba(166, 61, 47, 0.06);
+  border-left: 2px solid var(--error);
 }
 
 .selected {
-  background: rgba(167, 139, 250, 0.12) !important;
+  background: rgba(184, 99, 46, 0.1) !important;
   outline: 2px solid var(--highlight-selected);
   outline-offset: -2px;
 }
@@ -172,36 +172,36 @@
     gap: 0.3rem;
     flex-wrap: wrap;
   }
-  
+
   .editor-textarea {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
   }
-  
+
   .preview-container {
     padding: 0.5rem;
   }
-  
+
   .preview-table {
     font-size: 0.75rem;
   }
-  
+
   .preview-header {
     padding: 0.5rem 0.75rem;
   }
-  
+
   .header-name {
     font-size: 0.75rem;
   }
-  
+
   .header-formula {
     font-size: 0.7rem;
   }
-  
+
   .preview-cell {
     padding: 0.5rem 0.75rem;
   }
-  
+
   .cell-formula-indicator {
     font-size: 0.65rem;
   }

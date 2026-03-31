@@ -30,6 +30,7 @@ export default function Nav() {
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
+          fontFamily: 'var(--font-heading)',
         }}
       >
         <img src={import.meta.env.BASE_URL + 'logo-icon.svg'} alt="CalcMD" style={{ height: 28 }} />
@@ -69,6 +70,13 @@ export default function Nav() {
         </a>
       </div>
       <style>{`
+        .nav-link {
+          transition: color 0.15s ease;
+        }
+        .nav-link:hover {
+          color: var(--accent) !important;
+          text-decoration: none;
+        }
         @media (max-width: 768px) {
           nav {
             padding: 0 0.75rem !important;

@@ -9,25 +9,41 @@
 - Rust deps: wasm-bindgen, pest, petgraph, serde, serde_json
 - Build: `wasm-pack build --target bundler --out-dir pkg` then `tsup && tsc --emitDeclarationOnly`
 
+### Rust toolchain prerequisites
+
+```bash
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Add WASM target
+rustup target add wasm32-unknown-unknown
+
+# Install wasm-pack (requires Rust stable with edition2024 support)
+cargo install wasm-pack
+```
+
+> If `cargo install wasm-pack` fails, run `rustup update stable` first.
+
 ## UI Components (`@calcmd/ui`)
 
-- React 18 with TypeScript 5
 - Lit web components (Editor, Preview)
 - No build step — consumed as source by website via Vite alias
 - Depends on `@calcmd/core` via workspace reference (`workspace:*`)
 
 ## Website (`@calcmd/website`)
 
-- React 18 with TypeScript 5
-- Vite 5 + @vitejs/plugin-react + vite-plugin-wasm
+- React 18 with TypeScript
+- Vite + @vitejs/plugin-react + vite-plugin-wasm
 - `build.target: 'esnext'` required for WASM ESM support
 - React Router for `/` (landing) and `/playground` routes
 - `vite.config.ts` sets `base: '/calcmd/'` for GitHub Pages subpath
 - `@calcmd/core` resolves via workspace dependency (dist/), not source alias
+- Design system: warm palette (Source Serif 4 + Source Sans 3 + Source Code Pro), CSS custom properties in `styles.css`
 
 ## Package Management
 
 - pnpm workspaces — single `pnpm install` from repo root installs all packages
+- Rust dependencies managed by Cargo.toml inside `packages/core/`, invoked automatically via pnpm scripts
 - Workspace root: repo root (`/`)
 - Workspace config: `pnpm-workspace.yaml`
 

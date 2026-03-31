@@ -26,8 +26,8 @@ export class CalcMDEditor extends LitElement {
       justify-content: space-between;
       gap: 0.4rem;
       padding: 0.4rem 0.75rem;
-      border-bottom: 1px solid var(--border, #30363d);
-      background: var(--surface, #161b22);
+      border-bottom: 1px solid var(--border, #e4ddd0);
+      background: var(--surface, #f5f0e8);
       flex-shrink: 0;
     }
 
@@ -42,8 +42,8 @@ export class CalcMDEditor extends LitElement {
       align-items: center;
       gap: 0.35rem;
       background: transparent;
-      border: 1px solid var(--border, #30363d);
-      color: var(--muted, #8b949e);
+      border: 1px solid var(--border, #e4ddd0);
+      color: var(--muted, #7a6e5d);
       padding: 0.25rem 0.6rem;
       border-radius: 5px;
       cursor: pointer;
@@ -56,8 +56,8 @@ export class CalcMDEditor extends LitElement {
     }
 
     .toolbar-button:hover:not(:disabled) {
-      color: var(--text, #e6edf3);
-      border-color: var(--accent, #58a6ff);
+      color: var(--text, #2c2418);
+      border-color: var(--accent, #b8632e);
     }
 
     .toolbar-button:disabled {
@@ -66,19 +66,19 @@ export class CalcMDEditor extends LitElement {
     }
 
     .share-button {
-      background: rgba(88, 166, 255, 0.08);
-      border: 1px solid var(--accent, #58a6ff);
-      color: var(--accent, #58a6ff);
+      background: rgba(184, 99, 46, 0.08);
+      border: 1px solid var(--accent, #b8632e);
+      color: var(--accent, #b8632e);
       font-weight: 500;
     }
 
     .share-button.success {
-      background: rgba(88, 166, 255, 0.15);
+      background: rgba(184, 99, 46, 0.15);
     }
 
     .share-button.error {
-      border-color: var(--error, #f85149);
-      color: var(--error, #f85149);
+      border-color: var(--error, #a63d2f);
+      color: var(--error, #a63d2f);
     }
 
     .editor-textarea {
@@ -87,9 +87,9 @@ export class CalcMDEditor extends LitElement {
       padding: 0.75rem 1rem;
       border: none;
       outline: none;
-      background: var(--surface, #161b22);
-      color: var(--text, #e6edf3);
-      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: var(--surface, #f5f0e8);
+      color: var(--text, #2c2418);
+      font-family: var(--font-mono, 'SF Mono', 'Fira Code', monospace);
       font-size: 0.82rem;
       line-height: 1.6;
       resize: none;
@@ -101,7 +101,7 @@ export class CalcMDEditor extends LitElement {
     }
 
     .editor-textarea::placeholder {
-      color: var(--muted, #8b949e);
+      color: var(--muted, #7a6e5d);
     }
 
     svg {
